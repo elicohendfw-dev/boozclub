@@ -113,7 +113,7 @@
         <button class="btn" id="refreshBtn" title="Reload JSON">Refresh</button>
         <button class="btn warn" id="editHostsBtn" title="Edit hosts.json on GitHub">Edit Hosts</button>
         <button class="btn warn" id="editEventsBtn" title="Edit events.json on GitHub">Edit Events</button>
-                        <button class="btn" id="shareBtn" title="Copy shareable summary">Share</button>
+        <button class="btn" id="shareBtn" title="Copy shareable summary">Share</button>
       </div>
     </header>
 
@@ -417,28 +417,80 @@
     }
 
     // --- Buttons ---
-    el.mapBtn.addEventListener('click', ()=>{ const q = encodeURIComponent(state.location || ''); window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, '_blank'); });
-    el.copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(state.location || ''); alert('Address copied'); }catch{ alert('Copy failed'); } });
-    el.calBtn.addEventListener('click', ()=>{ const ics = buildICS(); const blob = new Blob([ics], { type:'text/calendar;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `BoozClub-${state.date}.ics`; a.click(); URL.revokeObjectURL(url); });
-    el.shareBtn.addEventListener('click', async ()=>{ const text = `BoozClub — Next Gathering\nHost: ${state.host}\nDate: ${formatDate(state.date)}\nTime: ${formatTime(state.time)}\nLocation: ${state.location}${state.note?`\nNote: ${state.note}`:''}`; if (navigator.share) { try { await navigator.share({ text }); } catch {} } else { try { await navigator.clipboard.writeText(text); alert('Summary copied'); } catch { alert('Copy failed'); } } });
+    el.mapBtn.addEventListener('click', ()=>{
+      const q = encodeURIComponent(state.location || '');
+      window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, '_blank');
+    });
+    el.copyBtn.addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText(state.location || ''); alert('Address copied'); }
+      catch{ alert('Copy failed'); }
+    });
+    el.calBtn.addEventListener('click', ()=>{
+      const ics = buildICS();
+      const blob = new Blob([ics], { type:'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `BoozClub-${state.date}.ics`; a.click();
+      URL.revokeObjectURL(url);
+    });
+    el.shareBtn.addEventListener('click', async ()=>{
+      const text = `BoozClub — Next Gathering\nHost: ${state.host}\nDate: ${formatDate(state.date)}\nTime: ${formatTime(state.time)}\nLocation: ${state.location}${state.note?`\nNote: ${state.note}`:''}`;
+      if (navigator.share) {
+        try { await navigator.share({ text }); } catch {}
+      } else {
+        try { await navigator.clipboard.writeText(text); alert('Summary copied'); } catch { alert('Copy failed'); }
+      }
+    });
     el.refreshBtn.addEventListener('click', ()=> syncFromRemote(true));
-    el.editHostsBtn.addEventListener('click', ()=>{ const url = getGithubEditURL('hosts.json'); if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo.'); } });
-    el.editEventsBtn.addEventListener('click', ()=>{ const url = getGithubEditURL('events.json'); if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo.'); } }); } catch {} const url = getGithubEditURL(); if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo to enable one-click edit.'); } });
-     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'event.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); });
-     const data = JSON.parse(text); const cleaned = { ...DEFAULTS, ...data }; saveLocal(cleaned); alert('Loaded from JSON (preview only). Click "Edit on GitHub" to publish.'); }catch(err){ alert('Upload failed: ' + (err && err.message ? err.message : String(err))); }finally{ e.target.value = ''; } });
+    el.editHostsBtn.addEventListener('click', ()=>{
+      const url = getGithubEditURL('hosts.json');
+      if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo.'); }
+    });
+    el.editEventsBtn.addEventListener('click', ()=>{
+      const url = getGithubEditURL('events.json');
+      if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo.'); }
+    });
 
     // --- Admin (local preview) ---
     el.adminBtn.addEventListener('click', async ()=>{ const ok = await verifyPIN(); if(ok){ el.adminModal.showModal(); } });
     el.closeModal.addEventListener('click', ()=> el.adminModal.close());
-    el.saveBtn.addEventListener('click', ()=>{ saveLocal({ clubName: el.inputs.clubName.value.trim() || DEFAULTS.clubName, clubTag: el.inputs.clubTag.value.trim() || DEFAULTS.clubTag, host: el.inputs.host.value.trim(), date: el.inputs.date.value, time: el.inputs.time.value, location: el.inputs.location.value.trim(), note: el.inputs.note.value, pin: el.inputs.pin.value || DEFAULTS.pin }); el.adminModal.close(); });
-    el.resetBtn.addEventListener('click', ()=>{ if(confirm('Clear saved details on this device?')){ localStorage.removeItem(KEY); Object.assign(state, { ...DEFAULTS }); render(); } });
-    el.copyJsonBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(JSON.stringify(toJSON(), null, 2)); alert('JSON copied'); } catch{ alert('Copy failed'); } });
+    el.saveBtn.addEventListener('click', ()=>{
+      saveLocal({
+        clubName: el.inputs.clubName.value.trim() || DEFAULTS.clubName,
+        clubTag: el.inputs.clubTag.value.trim() || DEFAULTS.clubTag,
+        host: el.inputs.host.value.trim(),
+        date: el.inputs.date.value,
+        time: el.inputs.time.value,
+        location: el.inputs.location.value.trim(),
+        note: el.inputs.note.value,
+        pin: el.inputs.pin.value || DEFAULTS.pin
+      });
+      el.adminModal.close();
+    });
+    el.resetBtn.addEventListener('click', ()=>{
+      if(confirm('Clear saved details on this device?')){
+        localStorage.removeItem(KEY);
+        Object.assign(state, { ...DEFAULTS });
+        render();
+      }
+    });
+    el.copyJsonBtn.addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText(JSON.stringify(toJSON(), null, 2)); alert('JSON copied'); }
+      catch{ alert('Copy failed'); }
+    });
 
     // --- Auth/PIN ---
-    function verifyPIN(){ return new Promise((resolve)=>{ const attempt = prompt('Enter admin PIN to edit (default: "boozclub")') || ''; resolve(attempt === state.pin); }); }
+    function verifyPIN(){
+      return new Promise((resolve)=>{
+        const attempt = prompt('Enter admin PIN to edit (default: "boozclub")') || '';
+        resolve(attempt === state.pin);
+      });
+    }
 
     // --- Serializers ---
-    function toJSON(){ return { clubName: state.clubName, clubTag: state.clubTag, host: state.host, date: state.date, time: state.time, location: state.location, note: state.note, pin: state.pin }; }
+    function toJSON(){
+      return { clubName: state.clubName, clubTag: state.clubTag, host: state.host, date: state.date, time: state.time, location: state.location, note: state.note, pin: state.pin };
+    }
 
     function buildICS(){
       const uid = `${Date.now()}@boozclub.local`;
@@ -448,11 +500,21 @@
       const end = new Date(start.getTime() + 2*60*60*1000);
       const fmt = (dt)=> dt.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
       return [
-        'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//BoozClub//Event//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT',
-        `UID:${uid}`,`DTSTAMP:${fmt(new Date())}`,`DTSTART:${fmt(start)}`,`DTEND:${fmt(end)}`,
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//BoozClub//Event//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        'BEGIN:VEVENT',
+        `UID:${uid}`,
+        `DTSTAMP:${fmt(new Date())}`,
+        `DTSTART:${fmt(start)}`,
+        `DTEND:${fmt(end)}`,
         'SUMMARY:' + escapeICS('BoozClub — ' + (state.host || '')),
         `LOCATION:${escapeICS(state.location || '')}`,
-        `DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,'END:VEVENT','END:VCALENDAR'
+        `DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,
+        'END:VEVENT',
+        'END:VCALENDAR'
       ].join('\r\n');
     }
     function escapeICS(str){
@@ -464,8 +526,17 @@
     }
 
     // --- GitHub helpers ---
-    function inferRepoFromLocation(){ try{ const host = location.hostname; const pathSegs = location.pathname.split('/').filter(Boolean); if(host.endsWith('github.io')){ GH.user = host.split('.')[0]; GH.repo = pathSegs.length ? pathSegs[0] : `${GH.user}.github.io`; } }catch{} }
-    function getGithubEditURL(file){ if(!GH.user || !GH.repo) return ''; const f = file || 'events.json'; return `https://github.com/${GH.user}/${GH.repo}/edit/${GH.branch}/${f}`; }/${GH.repo}/edit/${GH.branch}/events.json`; }
+    function inferRepoFromLocation(){
+      try{
+        const host = location.hostname; const pathSegs = location.pathname.split('/').filter(Boolean);
+        if(host.endsWith('github.io')){ GH.user = host.split('.')[0]; GH.repo = pathSegs.length ? pathSegs[0] : `${GH.user}.github.io`; }
+      }catch{}
+    }
+    function getGithubEditURL(file){
+      if(!GH.user || !GH.repo) return '';
+      const f = file || 'events.json';
+      return `https://github.com/${GH.user}/${GH.repo}/edit/${GH.branch}/${f}`;
+    }
 
     // --- Minimal self-tests (console) ---
     (function runSelfTests(){
