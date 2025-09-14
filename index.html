@@ -194,6 +194,7 @@
   <script>
     const KEY = 'boozclub_event_v2';
     const EVENT_PATH = './event.json'; // central JSON served by GitHub Pages
+    const RAW_URL = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/${GH.branch}/event.json`; // fallback
     const GH = { user:'elicohendfw-dev', repo:'boozers', branch:'main' };
 
     const DEFAULTS = {
@@ -292,13 +293,32 @@
 
     async function syncFromRemote(force){
       setStatus('Loading…', 'loading');
-      try{
-        const url = EVENT_PATH + (force ? `?t=${Date.now()}` : '');
-        const res = await fetch(url, { cache: 'no-store' });
-        if(!res.ok) throw new Error('HTTP '+res.status);
+      const qs = force ? `?t=${Date.now()}` : '';
+      // Try same-origin (Pages) first; fall back to raw.githubusercontent.com if needed
+      try {
+        const res = await fetch(EVENT_PATH + qs, { cache: 'no-store' });
+        if(!res.ok) throw { source:'pages', status: res.status };
         const remote = await res.json();
         Object.assign(state, { ...DEFAULTS, ...remote });
         try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+        render();
+        setStatus('Synced', 'ok');
+      } catch(e1){
+        try {
+          const res2 = await fetch(RAW_URL, { cache: 'no-store' });
+          if(!res2.ok) throw { source:'raw', status: res2.status };
+          const remote2 = await res2.json();
+          Object.assign(state, { ...DEFAULTS, ...remote2 });
+          try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+          render();
+          setStatus('Synced (raw)', 'ok');
+          console.warn('[BoozClub] Fetched event.json from raw.githubusercontent.com fallback');
+        } catch(e2){
+          console.error('[BoozClub] Failed to load event.json', e1, e2);
+          setStatus('Offline / using local', 'warn');
+        }
+      }
+    }
         render();
         setStatus('Synced', 'ok');
       }catch(e){
@@ -441,6 +461,9 @@ line';
       const ics = buildICS();
       assert('ICS contains required sections',
         /BEGIN:VCALENDAR/.test(ics) && /BEGIN:VEVENT/.test(ics) && /END:VEVENT/.test(ics) && /END:VCALENDAR/.test(ics));
+
+      // fallback URL test
+      assert('RAW_URL uses raw.githubusercontent.com', /raw\.githubusercontent\.com/.test(RAW_URL) && RAW_URL.includes(GH.user) && RAW_URL.includes(GH.repo));
 
       // JSON round-trip and merge test
       const round = JSON.stringify({host:'X', date:'2025-12-31', time:'19:00', location:'Addr'});
