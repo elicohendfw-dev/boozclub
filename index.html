@@ -91,6 +91,11 @@
     .bannerOverlay{position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,0) 30%, rgba(0,0,0,.18))}
 
     footer{margin-top:36px; color:var(--muted); font-size:.9rem}
+
+    /* Schedule UI tweaks */
+    .badge{display:inline-block; padding:2px 8px; border-radius:999px; font-size:.75rem; border:1px solid rgba(148,163,184,.45)}
+    .badge.skipped{border-color:var(--accent); color:var(--accent);}
+    .row-skipped{opacity:.65}
   </style>
 </head>
 <body>
@@ -383,13 +388,20 @@
         mount = section.querySelector('#'+mountId);
       }
       if(!list || !list.length){ mount.textContent = 'No events found.'; return; }
-      const rows = list.map(e=> `<tr>
+      const rows = list.map(e=> {
+        const isSkipped = (e.note||'').toLowerCase().includes('skipp');
+        const noteCell = isSkipped ? `<span class="badge skipped">Skipped</span>` : (e.note||'');
+        const timeCell = isSkipped ? '—' : formatTime(e.time);
+        const rowCls = isSkipped ? 'row-skipped' : '';
+        const locCell = e.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}" target="_blank" rel="noopener">Map</a>` : '—';
+        return `<tr class="${rowCls}">
           <td>${formatDate(e.date)}</td>
           <td>${e.host || '—'}</td>
-          <td>${e.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}" target="_blank" rel="noopener">Map</a>` : '—'}</td>
-          <td>${formatTime(e.time)}</td>
-          <td>${e.note||''}</td>
-        </tr>`).join('');
+          <td>${locCell}</td>
+          <td>${timeCell}</td>
+          <td>${noteCell}</td>
+        </tr>`;
+      }).join('');
       mount.innerHTML = `<div style="overflow:auto"><table style="width:100%; border-collapse:collapse">
         <thead><tr>
           <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Date</th>
