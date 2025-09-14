@@ -37,16 +37,9 @@
                          radial-gradient(1200px 700px at 120% -20%, rgba(220,38,38,.10), transparent 50%), var(--bg);
     }
     .wrap{max-width:920px; margin:0 auto; padding:28px 20px 64px}
-    header{
-      display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0 24px;
-    }
+    header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0 24px; }
     .brand{display:flex; align-items:center; gap:12px}
-    .logo{
-      width:44px; height:44px; border-radius:12px; background:
-        conic-gradient(from 210deg, rgba(30,64,175,.25), rgba(220,38,38,.25), rgba(30,64,175,.25));
-      display:grid; place-items:center; box-shadow:var(--shadow);
-      position:relative; overflow:hidden;
-    }
+    .logo{ width:44px; height:44px; border-radius:12px; background: conic-gradient(from 210deg, rgba(30,64,175,.25), rgba(220,38,38,.25), rgba(30,64,175,.25)); display:grid; place-items:center; box-shadow:var(--shadow); position:relative; overflow:hidden; }
     .logo::after{content:""; position:absolute; inset:1px; border-radius:11px; background:linear-gradient(145deg, rgba(255,255,255,.1), rgba(0,0,0,.15)); mix-blend-mode: overlay}
     .brand h1{font-size:1.35rem; margin:0; letter-spacing:.3px}
     .brand small{display:block; color:var(--muted); font-weight:500; letter-spacing:.2px}
@@ -80,11 +73,10 @@
     .modalBody{padding:4px 18px 18px}
     .field{display:grid; gap:6px; margin:12px 0}
     .field label{font-weight:700; font-size:.9rem}
-    .field input, .field textarea{
-      font: inherit; padding:10px 12px; border-radius:12px; border:1px solid rgba(148,163,184,.35); background:var(--bg); color:var(--text)
-    }
+    .field input, .field textarea{ font: inherit; padding:10px 12px; border-radius:12px; border:1px solid rgba(148,163,184,.35); background:var(--bg); color:var(--text) }
     .modalActions{display:flex; gap:10px; justify-content:flex-end; margin-top:10px}
     .hint{color:var(--muted); font-size:.85rem}
+
     /* Full-bleed banner */
     .fullBleed{position:relative; left:50%; right:50%; margin-left:-50vw; margin-right:-50vw; width:100vw}
     .bannerImg{width:100%; height:clamp(220px, 30vw, 420px); object-fit:cover; display:block}
@@ -110,8 +102,8 @@
       </div>
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
         <span class="status" id="syncStatus">Loading…</span>
-        <button class="btn" id="refreshBtn" title="Reload event.json">Refresh</button>
-        <button class="btn" id="gitBtn" title="Edit event.json on GitHub">Edit on GitHub</button>
+        <button class="btn" id="refreshBtn" title="Reload JSON">Refresh</button>
+        <button class="btn" id="gitBtn" title="Edit events.json on GitHub">Edit on GitHub</button>
         <button class="btn" id="downloadBtn" title="Download event.json">Download JSON</button>
         <label class="btn" for="uploadInput" title="Upload event.json">Upload JSON</label>
         <input type="file" id="uploadInput" accept="application/json,.json" hidden>
@@ -142,6 +134,14 @@
         </div>
         <p class="footnote" id="noteValue" style="display:none"></p>
         <p class="footnote">Data source: <code>events.json</code> (schedule) or <code>event.json</code> (single event) in this site’s repository.</p>
+      </div>
+    </section>
+
+    <!-- Schedule section (populated when events.json is present) -->
+    <section class="card" id="scheduleSection" aria-labelledby="scheduleHeading" style="margin-top:18px; display:none;">
+      <div style="padding:18px">
+        <h3 id="scheduleHeading" style="margin:0 0 8px 0; font-size:1rem">Schedule</h3>
+        <div id="scheduleMount"></div>
       </div>
     </section>
 
@@ -202,33 +202,22 @@
         <button class="btn" id="resetBtn" title="Clear stored data">Reset</button>
         <button class="btn primary" id="saveBtn">Save (Preview)</button>
       </div>
-      <p class="hint">To publish for everyone: click <b>Edit on GitHub</b> (header), paste the copied JSON into <code>event.json</code>, and commit.</p>
+      <p class="hint">To publish for everyone: click <b>Edit on GitHub</b> (header), paste the copied JSON into <code>events.json</code> or <code>event.json</code>, and commit.</p>
     </div>
   </dialog>
 
   <script>
     // --- Config ---
-    const KEY = 'boozclub_event_v3';
+    const KEY = 'boozclub_event_v4';
     const GH = { user:'elicohendfw-dev', repo:'boozclub', branch:'main' };
-    const EVENT_PATH = './event.json'; // legacy single-event JSON (fallback)
-    const EVENTS_PATH = './events.json'; // new schedule JSON { events: [...] }
-    const HOSTS_PATH = './hosts.json';  // optional directory { hosts: [...] }
+    const EVENT_PATH = './event.json';      // legacy single-event JSON (fallback)
+    const EVENTS_PATH = './events.json';    // schedule JSON { events: [...] }
     const RAW_BASE = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/${GH.branch}`;
     const EVENT_RAW = `${RAW_BASE}/event.json`;
     const EVENTS_RAW = `${RAW_BASE}/events.json`;
-    const HOSTS_RAW = `${RAW_BASE}/hosts.json`;
 
     // --- Defaults ---
-    const DEFAULTS = {
-      clubName: 'BoozClub',
-      clubTag: 'Monthly tasting & fellowship',
-      host: 'TBD',
-      date: new Date().toISOString().slice(0,10), // yyyy-mm-dd
-      time: '19:00',
-      location: 'TBD',
-      note: '',
-      pin: 'boozclub'
-    };
+    const DEFAULTS = { clubName:'BoozClub', clubTag:'Monthly tasting & fellowship', host:'TBD', date:new Date().toISOString().slice(0,10), time:'19:00', location:'TBD', note:'', pin:'boozclub' };
 
     // --- Elements ---
     const el = {
@@ -264,6 +253,8 @@
       resetBtn: document.getElementById('resetBtn'),
       saveBtn: document.getElementById('saveBtn'),
       copyJsonBtn: document.getElementById('copyJsonBtn'),
+      scheduleSection: document.getElementById('scheduleSection'),
+      scheduleMount: document.getElementById('scheduleMount')
     };
 
     // --- State ---
@@ -274,16 +265,12 @@
 
     // --- Local storage helpers ---
     function loadLocal(){
-      try{
-        const raw = localStorage.getItem(KEY);
-        return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
-      }catch(e){
-        return { ...DEFAULTS };
-      }
+      try{ const raw = localStorage.getItem(KEY); return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS }; }
+      catch{ return { ...DEFAULTS }; }
     }
     function saveLocal(next){
       const merged = { ...state, ...next };
-      try{ localStorage.setItem(KEY, JSON.stringify(merged)); }catch(e){}
+      try{ localStorage.setItem(KEY, JSON.stringify(merged)); }catch{}
       Object.assign(state, merged);
       render();
       setStatus('Preview (local)', 'preview');
@@ -297,10 +284,8 @@
       el.date.textContent = formatDate(state.date);
       el.time.textContent = formatTime(state.time);
       el.location.textContent = state.location || 'TBD';
-      if(state.note && state.note.trim().length){
-        el.note.style.display = 'block';
-        el.note.textContent = state.note.trim();
-      } else { el.note.style.display = 'none'; }
+      if(state.note && state.note.trim().length){ el.note.style.display = 'block'; el.note.textContent = state.note.trim(); }
+      else { el.note.style.display = 'none'; }
 
       // Prefill modal inputs
       el.inputs.clubName.value = state.clubName;
@@ -315,7 +300,7 @@
       document.getElementById('nextEventHeading').textContent = `Hosted by ${state.host || 'TBD'}`;
     }
 
-    // --- Sync from central JSON (with schedule support + raw fallback) ---
+    // --- Sync from central JSON (schedule first, then single event) ---
     async function syncFromRemote(force){
       setStatus('Loading…', 'loading');
       const qs = force ? `?t=${Date.now()}` : '';
@@ -323,30 +308,26 @@
       let loaded = false;
       let used = '';
 
-      // 0) Load hosts FIRST so schedule can auto-fill locations by host name
-      try{ window.__hostsDir = await fetchChain([HOSTS_PATH + qs, HOSTS_RAW]); }
-      catch(_){ window.__hostsDir = null; }
-
-      // 1) Try schedule (events.json) with raw fallback
+      // Try schedule (events.json) with raw fallback
       try{
         const sched = await fetchChain([EVENTS_PATH + qs, EVENTS_RAW]);
         if (sched && Array.isArray(sched.events)){
-          applySchedule(sched.events); // uses window.__hostsDir if available
+          applySchedule(sched.events);
           loaded = true; used = 'events';
         }
-      }catch(_){/* ignore */}
+      }catch{}
 
-      // 2) Fallback to single event (event.json) with raw fallback
+      // Fallback to single event (event.json) with raw fallback
       if(!loaded){
         try{
           const single = await fetchChain([EVENT_PATH + qs, EVENT_RAW]);
           Object.assign(state, { ...DEFAULTS, ...single });
           loaded = true; used = 'event';
-        }catch(_){ /* still not loaded */ }
+        }catch{}
       }
 
       if(loaded){
-        try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+        try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch{}
         render();
         setStatus(used==='events' ? 'Synced (schedule)' : 'Synced', 'ok');
       } else {
@@ -358,17 +339,55 @@
       const res = await fetch(url, { cache: 'no-store' });
       if(!res.ok) throw new Error('HTTP '+res.status+' '+url);
       return res.json();
-    }(url){
-      const res = await fetch(url, { cache: 'no-store' });
-      if(!res.ok) throw new Error('HTTP '+res.status+' '+url);
-      return res.json();
     }
     async function fetchChain(urls){
       let lastErr = null;
-      for(const u of urls){
-        try{ return await fetchJSON(u); }catch(e){ lastErr = e; }
-      }
+      for(const u of urls){ try{ return await fetchJSON(u); } catch(e){ lastErr = e; } }
       throw lastErr || new Error('All fetches failed');
+    }
+
+    function applySchedule(events){
+      // Normalize + sort ascending by date (no host auto-fill)
+      const norm = events
+        .map(e => ({ date: (e.date||'').slice(0,10), host: e.host || '', location: (e.location||''), time: e.time || '19:00', endTime: e.endTime || null, note: e.note || '' }))
+        .filter(e=> e.date)
+        .sort((a,b)=> a.date.localeCompare(b.date));
+
+      // Pick next upcoming (>= today and not explicitly skipped)
+      const today = new Date().toISOString().slice(0,10);
+      const next = norm.find(e => e.date >= today && !(e.note||'').toLowerCase().includes('skipp')) || norm[norm.length-1];
+      if(next){ Object.assign(state, { host: next.host, date: next.date, time: next.time || '19:00', location: next.location, note: next.note || '' }); }
+
+      renderSchedule(norm);
+    }
+
+    function renderSchedule(list){
+      if(!Array.isArray(list) || !list.length){ el.scheduleSection.style.display = 'none'; return; }
+      const rows = list.map(e=>{
+        const isSkipped = (e.note||'').toLowerCase().includes('skipp');
+        const noteCell = isSkipped ? `<span class="badge skipped">Skipped</span>` : (e.note||'');
+        const timeCell = isSkipped ? '—' : formatTime(e.time);
+        const rowCls = isSkipped ? 'row-skipped' : '';
+        const locCell = e.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}" target="_blank" rel="noopener">Map</a>` : '—';
+        return `<tr class="${rowCls}">
+          <td>${formatDate(e.date)}</td>
+          <td>${e.host || '—'}</td>
+          <td>${locCell}</td>
+          <td>${timeCell}</td>
+          <td>${noteCell}</td>
+        </tr>`;
+      }).join('');
+      el.scheduleMount.innerHTML = `<div style="overflow:auto"><table style="width:100%; border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Date</th>
+          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Host</th>
+          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Location</th>
+          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Time</th>
+          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Note</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+      el.scheduleSection.style.display = '';
     }
 
     // --- UI helpers ---
@@ -382,205 +401,63 @@
     function formatDate(yyyy_mm_dd){
       if(!yyyy_mm_dd) return '—';
       const [y,m,d] = yyyy_mm_dd.split('-').map(Number);
-      // Use local Date to avoid UTC shifting the displayed weekday (e.g., Sunday vs Monday)
-      const dt = new Date(y, (m||1)-1, d||1);
+      const dt = new Date(y, (m||1)-1, d||1); // local date, no UTC shift
       return dt.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-    });
     }
     function formatTime(hh_mm){
       if(!hh_mm) return '—';
       const [h,m] = hh_mm.split(':').map(Number);
-      const dt = new Date(); dt.setHours(h, m, 0, 0);
+      const dt = new Date(); dt.setHours(h||19, m||0, 0, 0);
       return dt.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
     }
 
     // --- Buttons ---
-    el.mapBtn.addEventListener('click', ()=>{
-      const q = encodeURIComponent(state.location || '');
-      window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, '_blank');
-    });
-    el.copyBtn.addEventListener('click', async ()=>{
-      try{ await navigator.clipboard.writeText(state.location || ''); alert('Address copied'); }catch(e){ alert('Copy failed'); }
-    });
-    el.calBtn.addEventListener('click', ()=>{
-      const ics = buildICS();
-      const blob = new Blob([ics], { type:'text/calendar;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `BoozClub-${state.date}.ics`; a.click();
-      URL.revokeObjectURL(url);
-    });
-    el.shareBtn.addEventListener('click', async ()=>{
-      const text = `BoozClub — Next Gathering\nHost: ${state.host}\nDate: ${formatDate(state.date)}\nTime: ${formatTime(state.time)}\nLocation: ${state.location}${state.note?`\nNote: ${state.note}`:''}`;
-      if (navigator.share) {
-        try { await navigator.share({ text }); } catch {}
-      } else {
-        try { await navigator.clipboard.writeText(text); alert('Summary copied'); } catch { alert('Copy failed'); }
-      }
-    });
+    el.mapBtn.addEventListener('click', ()=>{ const q = encodeURIComponent(state.location || ''); window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, '_blank'); });
+    el.copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(state.location || ''); alert('Address copied'); }catch{ alert('Copy failed'); } });
+    el.calBtn.addEventListener('click', ()=>{ const ics = buildICS(); const blob = new Blob([ics], { type:'text/calendar;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `BoozClub-${state.date}.ics`; a.click(); URL.revokeObjectURL(url); });
+    el.shareBtn.addEventListener('click', async ()=>{ const text = `BoozClub — Next Gathering\nHost: ${state.host}\nDate: ${formatDate(state.date)}\nTime: ${formatTime(state.time)}\nLocation: ${state.location}${state.note?`\nNote: ${state.note}`:''}`; if (navigator.share) { try { await navigator.share({ text }); } catch {} } else { try { await navigator.clipboard.writeText(text); alert('Summary copied'); } catch { alert('Copy failed'); } } });
     el.refreshBtn.addEventListener('click', ()=> syncFromRemote(true));
-    el.gitBtn.addEventListener('click', async ()=>{
-      try { await navigator.clipboard.writeText(JSON.stringify(toJSON(), null, 2)); } catch {}
-      const url = getGithubEditURL();
-      if(url){ window.open(url, '_blank'); }
-      else { alert('Set your GitHub repo to enable one-click edit.'); }
-    });
-    el.downloadBtn.addEventListener('click', ()=>{
-      const blob = new Blob([JSON.stringify(toJSON(), null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'event.json';
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-    });
-    el.uploadInput.addEventListener('change', async (e)=>{
-      const file = e.target.files && e.target.files[0];
-      if(!file) return;
-      try{
-        const text = await file.text();
-        const data = JSON.parse(text);
-        const cleaned = { ...DEFAULTS, ...data };
-        saveLocal(cleaned); // local preview only
-        alert('Loaded from JSON (preview only). Click "Edit on GitHub" to publish.');
-      }catch(err){
-        alert('Upload failed: ' + (err && err.message ? err.message : String(err)));
-      }finally{
-        e.target.value = '';
-      }
-    });
+    el.gitBtn.addEventListener('click', async ()=>{ try { await navigator.clipboard.writeText(JSON.stringify(toJSON(), null, 2)); } catch {} const url = getGithubEditURL(); if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo to enable one-click edit.'); } });
+    el.downloadBtn.addEventListener('click', ()=>{ const blob = new Blob([JSON.stringify(toJSON(), null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'event.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); });
+    el.uploadInput.addEventListener('change', async (e)=>{ const file = e.target.files && e.target.files[0]; if(!file) return; try{ const text = await file.text(); const data = JSON.parse(text); const cleaned = { ...DEFAULTS, ...data }; saveLocal(cleaned); alert('Loaded from JSON (preview only). Click "Edit on GitHub" to publish.'); }catch(err){ alert('Upload failed: ' + (err && err.message ? err.message : String(err))); }finally{ e.target.value = ''; } });
 
     // --- Admin (local preview) ---
-    el.adminBtn.addEventListener('click', async ()=>{
-      const ok = await verifyPIN();
-      if(ok){ el.adminModal.showModal(); }
-    });
+    el.adminBtn.addEventListener('click', async ()=>{ const ok = await verifyPIN(); if(ok){ el.adminModal.showModal(); } });
     el.closeModal.addEventListener('click', ()=> el.adminModal.close());
-    el.saveBtn.addEventListener('click', ()=>{
-      saveLocal({
-        clubName: el.inputs.clubName.value.trim() || DEFAULTS.clubName,
-        clubTag: el.inputs.clubTag.value.trim() || DEFAULTS.clubTag,
-        host: el.inputs.host.value.trim(),
-        date: el.inputs.date.value,
-        time: el.inputs.time.value,
-        location: el.inputs.location.value.trim(),
-        note: el.inputs.note.value,
-        pin: el.inputs.pin.value || DEFAULTS.pin,
-      });
-      el.adminModal.close();
-    });
-    el.resetBtn.addEventListener('click', ()=>{
-      if(confirm('Clear saved details on this device?')){
-        localStorage.removeItem(KEY);
-        Object.assign(state, { ...DEFAULTS });
-        render();
-      }
-    });
-    el.copyJsonBtn.addEventListener('click', async ()=>{
-      try{ await navigator.clipboard.writeText(JSON.stringify(toJSON(), null, 2)); alert('JSON copied'); }
-      catch{ alert('Copy failed'); }
-    });
+    el.saveBtn.addEventListener('click', ()=>{ saveLocal({ clubName: el.inputs.clubName.value.trim() || DEFAULTS.clubName, clubTag: el.inputs.clubTag.value.trim() || DEFAULTS.clubTag, host: el.inputs.host.value.trim(), date: el.inputs.date.value, time: el.inputs.time.value, location: el.inputs.location.value.trim(), note: el.inputs.note.value, pin: el.inputs.pin.value || DEFAULTS.pin }); el.adminModal.close(); });
+    el.resetBtn.addEventListener('click', ()=>{ if(confirm('Clear saved details on this device?')){ localStorage.removeItem(KEY); Object.assign(state, { ...DEFAULTS }); render(); } });
+    el.copyJsonBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(JSON.stringify(toJSON(), null, 2)); alert('JSON copied'); } catch{ alert('Copy failed'); } });
 
     // --- Auth/PIN ---
-    function verifyPIN(){
-      return new Promise((resolve)=>{
-        const attempt = prompt('Enter admin PIN to edit (default: "boozclub")') || '';
-        resolve(attempt === state.pin);
-      });
-    }
+    function verifyPIN(){ return new Promise((resolve)=>{ const attempt = prompt('Enter admin PIN to edit (default: "boozclub")') || ''; resolve(attempt === state.pin); }); }
 
     // --- Serializers ---
-    function toJSON(){
-      return {
-        clubName: state.clubName,
-        clubTag: state.clubTag,
-        host: state.host,
-        date: state.date,
-        time: state.time,
-        location: state.location,
-        note: state.note,
-        pin: state.pin
-      };
-    }
+    function toJSON(){ return { clubName: state.clubName, clubTag: state.clubTag, host: state.host, date: state.date, time: state.time, location: state.location, note: state.note, pin: state.pin }; }
 
     function buildICS(){
       const uid = `${Date.now()}@boozclub.local`;
-      // Build start/end in local time without TZ for simplicity
       const [y,m,d] = (state.date || '').split('-').map(Number);
       const [hh,mm] = (state.time || '19:00').split(':').map(Number);
       const start = new Date(y, (m||1)-1, d||1, hh||19, mm||0, 0);
-      const end = new Date(start.getTime() + 2*60*60*1000); // default 2 hours
+      const end = new Date(start.getTime() + 2*60*60*1000);
       const fmt = (dt)=> dt.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-
-      return [
-        'BEGIN:VCALENDAR',
-        'VERSION:2.0',
-        'PRODID:-//BoozClub//Event//EN',
-        'CALSCALE:GREGORIAN',
-        'METHOD:PUBLISH',
-        'BEGIN:VEVENT',
-        `UID:${uid}`,
-        `DTSTAMP:${fmt(new Date())}`,
-        `DTSTART:${fmt(start)}`,
-        `DTEND:${fmt(end)}`,
-        'SUMMARY:' + escapeICS('BoozClub — ' + (state.host || '')),
-        `LOCATION:${escapeICS(state.location || '')}`,
-        `DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,
-        'END:VEVENT',
-        'END:VCALENDAR'
-      ].join('\r\n');
+      return [ 'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//BoozClub//Event//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT',`UID:${uid}`,`DTSTAMP:${fmt(new Date())}`,`DTSTART:${fmt(start)}`,`DTEND:${fmt(end)}`,'SUMMARY:' + escapeICS('BoozClub — ' + (state.host || '')),`LOCATION:${escapeICS(state.location || '')}`,`DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,'END:VEVENT','END:VCALENDAR' ].join('\r\n');
     }
-
-    function escapeICS(str){
-      return String(str)
-        .replace(/\\/g, '\\\\')   // backslash
-        .replace(/\n/g, '\\n')      // newline
-        .replace(/,/g, '\\,')       // comma
-        .replace(/;/g, '\\;');      // semicolon
-    }
+    function escapeICS(str){ return String(str).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;'); }
 
     // --- GitHub helpers ---
-    function inferRepoFromLocation(){
-      try{
-        const host = location.hostname; // e.g., user.github.io
-        const pathSegs = location.pathname.split('/').filter(Boolean);
-        if(host.endsWith('github.io')){
-          GH.user = host.split('.')[0];
-          GH.repo = pathSegs.length ? pathSegs[0] : `${GH.user}.github.io`;
-        }
-      }catch(e){}
-    }
-    function getGithubEditURL(){
-      if(!GH.user || !GH.repo) return '';
-      return `https://github.com/${GH.user}/${GH.repo}/edit/${GH.branch}/events.json`;
-    }
+    function inferRepoFromLocation(){ try{ const host = location.hostname; const pathSegs = location.pathname.split('/').filter(Boolean); if(host.endsWith('github.io')){ GH.user = host.split('.')[0]; GH.repo = pathSegs.length ? pathSegs[0] : `${GH.user}.github.io`; } }catch{} }
+    function getGithubEditURL(){ if(!GH.user || !GH.repo) return ''; return `https://github.com/${GH.user}/${GH.repo}/edit/${GH.branch}/events.json`; }
 
     // --- Minimal self-tests (console) ---
     (function runSelfTests(){
-      const tests = [];
-      function ok(name, cond){ tests.push({ name, pass: !!cond }); }
-
-      // escapeICS
-      const sample = 'a,b;c\\d\nline';
-      const escaped = escapeICS(sample);
+      const tests = []; const ok = (name, cond)=> tests.push({ name, pass: !!cond });
+      const sample = 'a,b;c\\d\nline'; const escaped = escapeICS(sample);
       ok('escapeICS escapes , ; \\ and newline', escaped === 'a\\,b\\;c\\\\d\\nline');
-
-      // buildICS
-      const ics = buildICS();
-      ok('ICS has sections', /BEGIN:VCALENDAR/.test(ics) && /BEGIN:VEVENT/.test(ics) && /END:VEVENT/.test(ics) && /END:VCALENDAR/.test(ics));
-
-      // toJSON keys
-      const keysOk = ['clubName','clubTag','host','date','time','location','note','pin'].every(k => k in toJSON());
-      ok('toJSON exposes required keys', keysOk);
-
-      // GH edit URL
-      ok('GitHub edit URL is shaped correctly', getGithubEditURL().includes('github.com/') && getGithubEditURL().endsWith('/event.json'));
-
-      const failed = tests.filter(t=>!t.pass);
-      if (failed.length){
-        console.warn('[BoozClub tests] FAILED', failed);
-      } else {
-        console.log('[BoozClub tests] All tests passed');
-      }
+      const ics = buildICS(); ok('ICS has sections', /BEGIN:VCALENDAR/.test(ics) && /BEGIN:VEVENT/.test(ics) && /END:VEVENT/.test(ics) && /END:VCALENDAR/.test(ics));
+      ok('toJSON exposes required keys', ['clubName','clubTag','host','date','time','location','note','pin'].every(k => k in toJSON()));
+      ok('GitHub edit URL ends with events.json', getGithubEditURL().endsWith('/events.json'));
+      const failed = tests.filter(t=>!t.pass); if (failed.length){ console.warn('[BoozClub tests] FAILED', failed); } else { console.log('[BoozClub tests] All tests passed'); }
     })();
   </script>
 </body>
