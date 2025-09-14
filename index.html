@@ -104,6 +104,8 @@
         <button class="btn" id="refreshBtn" title="Reload event.json">Refresh</button>
         <button class="btn" id="gitBtn" title="Edit event.json on GitHub">Edit on GitHub</button>
         <button class="btn" id="downloadBtn" title="Download event.json">Download JSON</button>
+        <label class="btn" for="uploadInput" title="Upload event.json">Upload JSON</label>
+        <input type="file" id="uploadInput" accept="application/json,.json" hidden>
         <button class="btn" id="shareBtn" title="Copy shareable summary">Share</button>
       </div>
     </header>
@@ -218,6 +220,7 @@
       calBtn: document.getElementById('calendarBtn'),
       copyBtn: document.getElementById('copyBtn'),
       downloadBtn: document.getElementById('downloadBtn'),
+      uploadInput: document.getElementById('uploadInput'),
       shareBtn: document.getElementById('shareBtn'),
       refreshBtn: document.getElementById('refreshBtn'),
       gitBtn: document.getElementById('gitBtn'),
@@ -356,6 +359,22 @@
 
     el.downloadBtn.addEventListener('click', ()=>{
       const blob = new Blob([JSON.stringify(toJSON(), null, 2)], { type: 'application/json' });
+
+    el.uploadInput.addEventListener('change', async (e)=>{
+      const file = e.target.files && e.target.files[0];
+      if(!file) return;
+      try{
+        const text = await file.text();
+        const data = JSON.parse(text);
+        const cleaned = { ...DEFAULTS, ...data };
+        saveLocal(cleaned); // local preview only
+        alert('Loaded from JSON (preview only). Click "Edit on GitHub" to publish.');
+      }catch(err){
+        alert('Upload failed: ' + (err && err.message ? err.message : String(err)));
+      }finally{
+        e.target.value = '';
+      }
+    });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = 'event.json';
@@ -484,15 +503,22 @@
       function assert(name, cond){ tests.push({ name, pass: !!cond }); }
 
       // escapeICS tests
-      const sample = 'a,b;c\\d\nline';
+      const sample = 'a,b;c\d
+line';
       const escaped = escapeICS(sample);
-      assert('escapeICS adds escapes for , ; \\ and newline',
-        escaped === 'a\\,b\\;c\\\\d\\nline');
+      assert('escapeICS adds escapes for , ; \ and newline',
+        escaped === 'a\,b\;c\\d\nline');
 
       // buildICS tests
       const ics = buildICS();
       assert('ICS contains required sections',
         /BEGIN:VCALENDAR/.test(ics) && /BEGIN:VEVENT/.test(ics) && /END:VEVENT/.test(ics) && /END:VCALENDAR/.test(ics));
+
+      // JSON round-trip and merge test
+      const round = JSON.stringify({host:'X', date:'2025-12-31', time:'19:00', location:'Addr'});
+      const parsed = JSON.parse(round);
+      const merged = { ...DEFAULTS, ...parsed };
+      assert('JSON merge retains provided fields', merged.host==='X' && merged.date==='2025-12-31' && merged.location==='Addr');
 
       // report
       const failed = tests.filter(t=>!t.pass);
