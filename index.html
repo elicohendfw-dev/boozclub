@@ -350,11 +350,17 @@
 
     function applySchedule(events){
       // Normalize + sort ascending by date
+      const hostsDir = (window.__hostsDir && Array.isArray(window.__hostsDir.hosts)) ? window.__hostsDir.hosts : [];
+      const findHostAddr = (name)=>{
+        if(!name || !hostsDir) return '';
+        const h = hostsDir.find(h=> String(h.name||'').toLowerCase() === String(name).toLowerCase());
+        return (h && h.location) ? h.location : '';
+      };
       const norm = events
         .map(e => ({
           date: (e.date||'').slice(0,10),
           host: e.host || '',
-          location: e.location || '',
+          location: (e.location && e.location.trim()) ? e.location : findHostAddr(e.host),
           time: e.time || '19:00',
           endTime: e.endTime || null,
           note: e.note || ''
@@ -364,7 +370,7 @@
 
       // Pick next upcoming (>= today and not explicitly skipped)
       const today = new Date().toISOString().slice(0,10);
-      const next = norm.find(e => e.date >= today && (e.note||'').toLowerCase() !== 'skipped') || norm[norm.length-1];
+      const next = norm.find(e => e.date >= today && !(e.note||'').toLowerCase().includes('skipp')) || norm[norm.length-1];
       if(next){ Object.assign(state, {
         host: next.host, date: next.date, time: next.time || '19:00', location: next.location, note: next.note || ''
       }); }
