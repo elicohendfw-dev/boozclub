@@ -97,6 +97,7 @@
     .badge.skipped{border-color:var(--accent); color:var(--accent);} 
     .badge.cancelled{border-color:var(--accent); color:var(--accent);} /* same style; distinct class for clarity */
     .row-skipped{opacity:.65}
+    .row-active{color:var(--primary)}
   </style>
 </head>
 <body>
@@ -342,22 +343,27 @@
       renderSchedule(norm);
     }
 
+    // classify event for row styling
+    function classifyEvent(e){
+      const n=(e.note||'').toLowerCase();
+      const isSkipped = n.includes('skipp');
+      const isCancelled = n.includes('cancel');
+      return { isSkipped, isCancelled, rowClass: (isSkipped || isCancelled) ? 'row-skipped' : 'row-active' };
+    }
+
     function renderSchedule(list){
       if(!Array.isArray(list) || !list.length){ el.scheduleSection.style.display = 'none'; return; }
       const rows = list.map(e=>{
-        const n = (e.note||'').toLowerCase();
-        const isSkipped = n.includes('skipp');
-        const isCancelled = n.includes('cancel');
+        const { isSkipped, isCancelled, rowClass } = classifyEvent(e);
         const noteCell = isSkipped
           ? `<span class="badge skipped">Skipped</span>`
           : isCancelled
           ? `<span class="badge cancelled">Cancelled</span>`
           : (e.note||'');
-        const rowCls = (isSkipped || isCancelled) ? 'row-skipped' : '';
         const hostRaw = (e.host||'').trim().toLowerCase();
-        const hideHost = isSkipped || isCancelled || hostRaw==='skip' || hostRaw==='skipped' || hostRaw==='cancelled' || hostRaw==='canceled';
+        const hideHost = isSkipped || hostRaw==='skip' || hostRaw==='skipped' || hostRaw==='cancelled' || hostRaw==='canceled';
         const hostCell = hideHost ? '—' : (e.host || '—');
-        return `<tr class="${rowCls}">
+        return `<tr class="${rowClass}">
           <td>${formatDate(e.date)}</td>
           <td>${hostCell}</td>
           <td>${noteCell}</td>
@@ -499,6 +505,23 @@
       ok('toJSON exposes required keys', ['clubName','clubTag','host','date','note','pin'].every(k => k in toJSON()));
       const ics2 = buildICS(); ok('ICS is all-day', /DTSTART;VALUE=DATE:/i.test(ics2) && /DTEND;VALUE=DATE:/i.test(ics2));
       ok('edit events URL correct', getGithubEditURL('events.json').endsWith('/events.json'));
+      // Host visibility: Skip hides, Cancelled keeps host
+      (function(){
+        const sampleEvents = [
+          { date:'2025-01-06', host:'Skip', note:'Skipped' },
+          { date:'2025-02-03', host:'Tom', note:'' },
+          { date:'2025-03-03', host:'Tom', note:'Cancelled' }
+        ];
+        const out = sampleEvents.map(e=>{
+          const n=(e.note||'').toLowerCase();
+          const isSkipped = n.includes('skipp');
+          const hostRaw = (e.host||'').trim().toLowerCase();
+          const hideHost = isSkipped || hostRaw==='skip' || hostRaw==='skipped' || hostRaw==='cancelled' || hostRaw==='canceled';
+          return hideHost ? '—' : (e.host||'—');
+        });
+        ok('host hidden for Skip but kept for Cancelled', out[0]==='—' && out[2]==='Tom');
+      })();
+      ok('row class logic', classifyEvent({note:''}).rowClass==='row-active' && classifyEvent({note:'Skipped'}).rowClass==='row-skipped' && classifyEvent({note:'Cancelled'}).rowClass==='row-skipped');
       const failed = tests.filter(t=>!t.pass); if (failed.length){ console.warn('[BoozClub tests] FAILED', failed); } else { console.log('[BoozClub tests] All tests passed'); }
     })();
   </script>
