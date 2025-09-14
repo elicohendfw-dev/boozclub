@@ -213,6 +213,10 @@
     const EVENT_PATH = './event.json'; // legacy single-event JSON (fallback)
     const EVENTS_PATH = './events.json'; // new schedule JSON { events: [...] }
     const HOSTS_PATH = './hosts.json';  // optional directory { hosts: [...] }
+    const RAW_BASE = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/${GH.branch}`;
+    const EVENT_RAW = `${RAW_BASE}/event.json`;
+    const EVENTS_RAW = `${RAW_BASE}/events.json`;
+    const HOSTS_RAW = `${RAW_BASE}/hosts.json`;
 
     // --- Defaults ---
     const DEFAULTS = {
@@ -311,119 +315,56 @@
       document.getElementById('nextEventHeading').textContent = `Hosted by ${state.host || 'TBD'}`;
     }
 
-    // --- Sync from central JSON (with schedule support) ---
+    // --- Sync from central JSON (with schedule support + raw fallback) ---
     async function syncFromRemote(force){
       setStatus('Loading…', 'loading');
       const qs = force ? `?t=${Date.now()}` : '';
 
-      // Try new schedule format first
       let loaded = false;
+      let used = '';
+
+      // 1) Try schedule first (events.json) with raw fallback
       try{
-        const sched = await fetchJSON(EVENTS_PATH + qs);
+        const sched = await fetchChain([EVENTS_PATH + qs, EVENTS_RAW]);
         if (sched && Array.isArray(sched.events)){
           applySchedule(sched.events);
-          loaded = true;
+          loaded = true; used = 'events';
         }
       }catch(_){/* ignore */}
 
-      // Optionally load hosts directory (not required for display)
-      try{ window.__hostsDir = await fetchJSON(HOSTS_PATH + qs); }catch(_){ window.__hostsDir = null; }
+      // 2) Optionally hosts directory (does not affect loaded flag)
+      try{ window.__hostsDir = await fetchChain([HOSTS_PATH + qs, HOSTS_RAW]); }
+      catch(_){ window.__hostsDir = null; }
 
-      // Fallback to legacy single-event JSON
+      // 3) Fallback to single event (event.json) with raw fallback
       if(!loaded){
         try{
-          const single = await fetchJSON(EVENT_PATH + qs);
+          const single = await fetchChain([EVENT_PATH + qs, EVENT_RAW]);
           Object.assign(state, { ...DEFAULTS, ...single });
-          loaded = true;
+          loaded = true; used = 'event';
         }catch(_){ /* still not loaded */ }
       }
 
-      // Finalize
       if(loaded){
         try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
         render();
-        setStatus('Synced', 'ok');
+        setStatus(used==='events' ? 'Synced (schedule)' : 'Synced', 'ok');
       } else {
         setStatus('Offline / using local', 'warn');
       }
     }
 
-    function applySchedule(events){
-      // Normalize + sort ascending by date
-      const hostsDir = (window.__hostsDir && Array.isArray(window.__hostsDir.hosts)) ? window.__hostsDir.hosts : [];
-      const findHostAddr = (name)=>{
-        if(!name || !hostsDir) return '';
-        const h = hostsDir.find(h=> String(h.name||'').toLowerCase() === String(name).toLowerCase());
-        return (h && h.location) ? h.location : '';
-      };
-      const norm = events
-        .map(e => ({
-          date: (e.date||'').slice(0,10),
-          host: e.host || '',
-          location: (e.location && e.location.trim()) ? e.location : findHostAddr(e.host),
-          time: e.time || '19:00',
-          endTime: e.endTime || null,
-          note: e.note || ''
-        }))
-        .filter(e=> e.date)
-        .sort((a,b)=> a.date.localeCompare(b.date));
-
-      // Pick next upcoming (>= today and not explicitly skipped)
-      const today = new Date().toISOString().slice(0,10);
-      const next = norm.find(e => e.date >= today && !(e.note||'').toLowerCase().includes('skipp')) || norm[norm.length-1];
-      if(next){ Object.assign(state, {
-        host: next.host, date: next.date, time: next.time || '19:00', location: next.location, note: next.note || ''
-      }); }
-
-      // Render schedule list
-      renderSchedule(norm);
-    }
-
-    function renderSchedule(list){
-      const mountId = 'scheduleMount';
-      let mount = document.getElementById(mountId);
-      if(!mount){
-        const section = document.createElement('section');
-        section.className = 'card';
-        section.style.marginTop = '18px';
-        section.innerHTML = `<div style="padding:18px">
-          <h3 style="margin:0 0 8px 0; font-size:1rem">Schedule</h3>
-          <div id="${mountId}"></div>
-        </div>`;
-        document.querySelector('.wrap').appendChild(section);
-        mount = section.querySelector('#'+mountId);
-      }
-      if(!list || !list.length){ mount.textContent = 'No events found.'; return; }
-      const rows = list.map(e=> {
-        const isSkipped = (e.note||'').toLowerCase().includes('skipp');
-        const noteCell = isSkipped ? `<span class="badge skipped">Skipped</span>` : (e.note||'');
-        const timeCell = isSkipped ? '—' : formatTime(e.time);
-        const rowCls = isSkipped ? 'row-skipped' : '';
-        const locCell = e.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}" target="_blank" rel="noopener">Map</a>` : '—';
-        return `<tr class="${rowCls}">
-          <td>${formatDate(e.date)}</td>
-          <td>${e.host || '—'}</td>
-          <td>${locCell}</td>
-          <td>${timeCell}</td>
-          <td>${noteCell}</td>
-        </tr>`;
-      }).join('');
-      mount.innerHTML = `<div style="overflow:auto"><table style="width:100%; border-collapse:collapse">
-        <thead><tr>
-          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Date</th>
-          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Host</th>
-          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Location</th>
-          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Time</th>
-          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Note</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table></div>`;
-    }
-
     async function fetchJSON(url){
       const res = await fetch(url, { cache: 'no-store' });
-      if(!res.ok) throw new Error('HTTP '+res.status);
+      if(!res.ok) throw new Error('HTTP '+res.status+' '+url);
       return res.json();
+    }
+    async function fetchChain(urls){
+      let lastErr = null;
+      for(const u of urls){
+        try{ return await fetchJSON(u); }catch(e){ lastErr = e; }
+      }
+      throw lastErr || new Error('All fetches failed');
     }
 
     // --- UI helpers ---
