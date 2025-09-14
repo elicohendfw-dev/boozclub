@@ -192,11 +192,12 @@
   </dialog>
 
   <script>
-    const KEY = 'boozclub_event_v2';
-    const EVENT_PATH = './event.json'; // central JSON served by GitHub Pages
-    const RAW_URL = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/${GH.branch}/event.json`; // fallback
+    // --- Config ---
+    const KEY = 'boozclub_event_v3';
     const GH = { user:'elicohendfw-dev', repo:'boozclub', branch:'main' };
+    const EVENT_PATH = './event.json'; // central JSON served by GitHub Pages
 
+    // --- Defaults ---
     const DEFAULTS = {
       clubName: 'BoozClub',
       clubTag: 'Monthly tasting & fellowship',
@@ -208,7 +209,7 @@
       pin: 'boozclub'
     };
 
-    // Elements
+    // --- Elements ---
     const el = {
       clubName: document.getElementById('clubName'),
       clubTag: document.getElementById('clubTag'),
@@ -244,11 +245,13 @@
       copyJsonBtn: document.getElementById('copyJsonBtn'),
     };
 
+    // --- State ---
     const state = loadLocal();
     inferRepoFromLocation();
     render();
     syncFromRemote(false);
 
+    // --- Local storage helpers ---
     function loadLocal(){
       try{
         const raw = localStorage.getItem(KEY);
@@ -257,7 +260,6 @@
         return { ...DEFAULTS };
       }
     }
-
     function saveLocal(next){
       const merged = { ...state, ...next };
       try{ localStorage.setItem(KEY, JSON.stringify(merged)); }catch(e){}
@@ -266,6 +268,7 @@
       setStatus('Preview (local)', 'preview');
     }
 
+    // --- Render ---
     function render(){
       el.clubName.textContent = state.clubName;
       el.clubTag.textContent = state.clubTag;
@@ -291,60 +294,119 @@
       document.getElementById('nextEventHeading').textContent = `Hosted by ${state.host || 'TBD'}`;
     }
 
+    // --- Sync from central JSON (with safe fallback) ---
     async function syncFromRemote(force){
       setStatus('Loading…', 'loading');
       const qs = force ? `?t=${Date.now()}` : '';
-      // Try same-origin (Pages) first; fall back to raw.githubusercontent.com if needed
       try {
         const res = await fetch(EVENT_PATH + qs, { cache: 'no-store' });
-        if(!res.ok) throw { source:'pages', status: res.status };
+        if(!res.ok) throw new Error('HTTP '+res.status);
         const remote = await res.json();
         Object.assign(state, { ...DEFAULTS, ...remote });
         try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
         render();
         setStatus('Synced', 'ok');
-      } catch(e1){
-        try {
-          const res2 = await fetch(RAW_URL, { cache: 'no-store' });
-          if(!res2.ok) throw { source:'raw', status: res2.status };
+      } catch (e1) {
+        // fallback to raw.githubusercontent.com (read-only, CORS-friendly)
+        const rawUrl = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/${GH.branch}/event.json`;
+        try{
+          const res2 = await fetch(rawUrl, { cache: 'no-store' });
+          if(!res2.ok) throw new Error('HTTP '+res2.status);
           const remote2 = await res2.json();
           Object.assign(state, { ...DEFAULTS, ...remote2 });
           try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
           render();
           setStatus('Synced (raw)', 'ok');
-          console.warn('[BoozClub] Fetched event.json from raw.githubusercontent.com fallback');
-        } catch(e2){
+          console.warn('[BoozClub] Using raw.githubusercontent.com fallback');
+        }catch(e2){
           console.error('[BoozClub] Failed to load event.json', e1, e2);
           setStatus('Offline / using local', 'warn');
         }
       }
     }
-        render();
-        setStatus('Synced', 'ok');
-      }catch(e){
-        setStatus('Offline / using local', 'warn');
-      }
-    }catch(e){
-        setStatus('Offline / using local', 'warn');
-      }
+
+    // --- UI helpers ---
+    function setStatus(text, tone){
+      el.sync.textContent = text;
+      el.sync.style.borderColor = tone==='ok' ? 'rgba(22,163,74,.45)'
+        : tone==='warn' ? 'rgba(234,179,8,.55)'
+        : tone==='preview' ? 'rgba(59,130,246,.45)'
+        : 'rgba(148,163,184,.35)';
+    }
+    function formatDate(yyyy_mm_dd){
+      if(!yyyy_mm_dd) return '—';
+      const [y,m,d] = yyyy_mm_dd.split('-').map(Number);
+      const dt = new Date(Date.UTC(y, m-1, d)); // avoid TZ off-by-one
+      return dt.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    }
+    function formatTime(hh_mm){
+      if(!hh_mm) return '—';
+      const [h,m] = hh_mm.split(':').map(Number);
+      const dt = new Date(); dt.setHours(h, m, 0, 0);
+      return dt.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
     }
 
-    catch(e){
-        if(e && e.status === 404){
-          // Try the alternate filename once
-          return await fetchJSON(ALT_EVENT_PATH + qs);
-        }
-        throw e;
+    // --- Buttons ---
+    el.mapBtn.addEventListener('click', ()=>{
+      const q = encodeURIComponent(state.location || '');
+      window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, '_blank');
+    });
+    el.copyBtn.addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText(state.location || ''); alert('Address copied'); }catch(e){ alert('Copy failed'); }
+    });
+    el.calBtn.addEventListener('click', ()=>{
+      const ics = buildICS();
+      const blob = new Blob([ics], { type:'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `BoozClub-${state.date}.ics`; a.click();
+      URL.revokeObjectURL(url);
+    });
+    el.shareBtn.addEventListener('click', async ()=>{
+      const text = `BoozClub — Next Gathering\nHost: ${state.host}\nDate: ${formatDate(state.date)}\nTime: ${formatTime(state.time)}\nLocation: ${state.location}${state.note?`\nNote: ${state.note}`:''}`;
+      if (navigator.share) {
+        try { await navigator.share({ text }); } catch {}
+      } else {
+        try { await navigator.clipboard.writeText(text); alert('Summary copied'); } catch { alert('Copy failed'); }
       }
-    }
+    });
+    el.refreshBtn.addEventListener('click', ()=> syncFromRemote(true));
+    el.gitBtn.addEventListener('click', async ()=>{
+      try { await navigator.clipboard.writeText(JSON.stringify(toJSON(), null, 2)); } catch {}
+      const url = getGithubEditURL();
+      if(url){ window.open(url, '_blank'); }
+      else { alert('Set your GitHub repo to enable one-click edit.'); }
+    });
+    el.downloadBtn.addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify(toJSON(), null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'event.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    });
+    el.uploadInput.addEventListener('change', async (e)=>{
+      const file = e.target.files && e.target.files[0];
+      if(!file) return;
+      try{
+        const text = await file.text();
+        const data = JSON.parse(text);
+        const cleaned = { ...DEFAULTS, ...data };
+        saveLocal(cleaned); // local preview only
+        alert('Loaded from JSON (preview only). Click "Edit on GitHub" to publish.');
+      }catch(err){
+        alert('Upload failed: ' + (err && err.message ? err.message : String(err)));
+      }finally{
+        e.target.value = '';
+      }
+    });
 
-    
+    // --- Admin (local preview) ---
     el.adminBtn.addEventListener('click', async ()=>{
       const ok = await verifyPIN();
       if(ok){ el.adminModal.showModal(); }
     });
     el.closeModal.addEventListener('click', ()=> el.adminModal.close());
-
     el.saveBtn.addEventListener('click', ()=>{
       saveLocal({
         clubName: el.inputs.clubName.value.trim() || DEFAULTS.clubName,
@@ -358,7 +420,6 @@
       });
       el.adminModal.close();
     });
-
     el.resetBtn.addEventListener('click', ()=>{
       if(confirm('Clear saved details on this device?')){
         localStorage.removeItem(KEY);
@@ -366,12 +427,12 @@
         render();
       }
     });
-
     el.copyJsonBtn.addEventListener('click', async ()=>{
       try{ await navigator.clipboard.writeText(JSON.stringify(toJSON(), null, 2)); alert('JSON copied'); }
       catch{ alert('Copy failed'); }
     });
 
+    // --- Auth/PIN ---
     function verifyPIN(){
       return new Promise((resolve)=>{
         const attempt = prompt('Enter admin PIN to edit (default: "boozclub")') || '';
@@ -379,6 +440,7 @@
       });
     }
 
+    // --- Serializers ---
     function toJSON(){
       return {
         clubName: state.clubName,
@@ -417,8 +479,7 @@
         `DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,
         'END:VEVENT',
         'END:VCALENDAR'
-      ].join('
-');
+      ].join('\r\n');
     }
 
     function escapeICS(str){
@@ -429,7 +490,7 @@
         .replace(/;/g, '\\;');      // semicolon
     }
 
-    // GitHub helpers
+    // --- GitHub helpers ---
     function inferRepoFromLocation(){
       try{
         const host = location.hostname; // e.g., user.github.io
@@ -440,39 +501,32 @@
         }
       }catch(e){}
     }
-
     function getGithubEditURL(){
       if(!GH.user || !GH.repo) return '';
       return `https://github.com/${GH.user}/${GH.repo}/edit/${GH.branch}/event.json`;
     }
 
-    // -------- Minimal self-tests (visible in DevTools console) --------
+    // --- Minimal self-tests (console) ---
     (function runSelfTests(){
       const tests = [];
-      function assert(name, cond){ tests.push({ name, pass: !!cond }); }
+      function ok(name, cond){ tests.push({ name, pass: !!cond }); }
 
-      // escapeICS tests
-      const sample = 'a,b;c\d
-line';
+      // escapeICS
+      const sample = 'a,b;c\\d\nline';
       const escaped = escapeICS(sample);
-      assert('escapeICS adds escapes for , ; \ and newline',
-        escaped === 'a\,b\;c\\d\nline');
+      ok('escapeICS escapes , ; \\ and newline', escaped === 'a\\,b\\;c\\\\d\\nline');
 
-      // buildICS tests
+      // buildICS
       const ics = buildICS();
-      assert('ICS contains required sections',
-        /BEGIN:VCALENDAR/.test(ics) && /BEGIN:VEVENT/.test(ics) && /END:VEVENT/.test(ics) && /END:VCALENDAR/.test(ics));
+      ok('ICS has sections', /BEGIN:VCALENDAR/.test(ics) && /BEGIN:VEVENT/.test(ics) && /END:VEVENT/.test(ics) && /END:VCALENDAR/.test(ics));
 
-      // fallback URL test
-      assert('RAW_URL uses raw.githubusercontent.com', /raw\.githubusercontent\.com/.test(RAW_URL) && RAW_URL.includes(GH.user) && RAW_URL.includes(GH.repo));
+      // toJSON keys
+      const keysOk = ['clubName','clubTag','host','date','time','location','note','pin'].every(k => k in toJSON());
+      ok('toJSON exposes required keys', keysOk);
 
-      // JSON round-trip and merge test
-      const round = JSON.stringify({host:'X', date:'2025-12-31', time:'19:00', location:'Addr'});
-      const parsed = JSON.parse(round);
-      const merged = { ...DEFAULTS, ...parsed };
-      assert('JSON merge retains provided fields', merged.host==='X' && merged.date==='2025-12-31' && merged.location==='Addr');
+      // GH edit URL
+      ok('GitHub edit URL is shaped correctly', getGithubEditURL().includes('github.com/') && getGithubEditURL().endsWith('/event.json'));
 
-      // report
       const failed = tests.filter(t=>!t.pass);
       if (failed.length){
         console.warn('[BoozClub tests] FAILED', failed);
