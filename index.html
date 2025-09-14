@@ -194,7 +194,7 @@
   <script>
     const KEY = 'boozclub_event_v2';
     const EVENT_PATH = './event.json'; // central JSON served by GitHub Pages
-    const GH = { user:'elicohendfw-dev', repo:'boozclub', branch:'main' };
+    const GH = { user:'elicohendfw-dev', repo:'boozers', branch:'main' };
 
     const DEFAULTS = {
       clubName: 'BoozClub',
@@ -298,99 +298,27 @@
         if(!res.ok) throw new Error('HTTP '+res.status);
         const remote = await res.json();
         Object.assign(state, { ...DEFAULTS, ...remote });
-        // update local cache to reflect central source
         try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
         render();
         setStatus('Synced', 'ok');
       }catch(e){
         setStatus('Offline / using local', 'warn');
       }
-    }
-
-    function setStatus(text, tone){
-      el.sync.textContent = text;
-      el.sync.style.borderColor = tone==='ok' ? 'rgba(22,163,74,.45)'
-        : tone==='warn' ? 'rgba(234,179,8,.55)'
-        : tone==='preview' ? 'rgba(59,130,246,.45)'
-        : 'rgba(148,163,184,.35)';
-    }
-
-    function formatDate(yyyy_mm_dd){
-      if(!yyyy_mm_dd) return '—';
-      const [y,m,d] = yyyy_mm_dd.split('-').map(Number);
-      const dt = new Date(Date.UTC(y, m-1, d)); // avoid TZ off-by-one
-      return dt.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
-    }
-    function formatTime(hh_mm){
-      if(!hh_mm) return '—';
-      const [h,m] = hh_mm.split(':').map(Number);
-      const dt = new Date(); dt.setHours(h, m, 0, 0);
-      return dt.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
-    }
-
-    // Buttons
-    el.mapBtn.addEventListener('click', ()=>{
-      const q = encodeURIComponent(state.location || '');
-      window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, '_blank');
-    });
-    el.copyBtn.addEventListener('click', async ()=>{
-      try{ await navigator.clipboard.writeText(state.location || ''); alert('Address copied'); }catch(e){ alert('Copy failed'); }
-    });
-    el.calBtn.addEventListener('click', ()=>{
-      const ics = buildICS();
-      assert('toJSON has required keys', (function(o){ const k = ['clubName','clubTag','host','date','time','location','note','pin']; return k.every(x=>x in o); })(toJSON()));
-      const blob = new Blob([ics], { type:'text/calendar;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `BoozClub-${state.date}.ics`; a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    el.shareBtn.addEventListener('click', async ()=>{
-      const text = `BoozClub — Next Gathering\nHost: ${state.host}\nDate: ${formatDate(state.date)}\nTime: ${formatTime(state.time)}\nLocation: ${state.location}${state.note?`\nNote: ${state.note}`:''}`;
-      if (navigator.share) {
-        try { await navigator.share({ text }); } catch {}
-      } else {
-        try { await navigator.clipboard.writeText(text); alert('Summary copied'); } catch { alert('Copy failed'); }
+    }catch(e){
+        setStatus('Offline / using local', 'warn');
       }
-    });
+    }
 
-    el.refreshBtn.addEventListener('click', ()=> syncFromRemote(true));
-
-    el.downloadBtn.addEventListener('click', ()=>{
-      const blob = new Blob([JSON.stringify(toJSON(), null, 2)], { type: 'application/json' });
-
-    el.uploadInput.addEventListener('change', async (e)=>{
-      const file = e.target.files && e.target.files[0];
-      if(!file) return;
-      try{
-        const text = await file.text();
-        const data = JSON.parse(text);
-        const cleaned = { ...DEFAULTS, ...data };
-        saveLocal(cleaned); // local preview only
-        alert('Loaded from JSON (preview only). Click "Edit on GitHub" to publish.');
-      }catch(err){
-        alert('Upload failed: ' + (err && err.message ? err.message : String(err)));
-      }finally{
-        e.target.value = '';
+    catch(e){
+        if(e && e.status === 404){
+          // Try the alternate filename once
+          return await fetchJSON(ALT_EVENT_PATH + qs);
+        }
+        throw e;
       }
-    });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = 'event.json';
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-    });
+    }
 
-    el.gitBtn.addEventListener('click', async ()=>{
-      const json = JSON.stringify(toJSON(), null, 2);
-      try { await navigator.clipboard.writeText(json); alert('event.json copied to clipboard'); } catch {}
-      const url = getGithubEditURL();
-      if(url){ window.open(url, '_blank'); }
-      else { alert('Set your GitHub repo to enable one-click edit.'); }
-    });
-
-    // Admin (local preview)
+    
     el.adminBtn.addEventListener('click', async ()=>{
       const ok = await verifyPIN();
       if(ok){ el.adminModal.showModal(); }
