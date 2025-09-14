@@ -412,12 +412,13 @@
         `DTSTAMP:${fmt(new Date())}`,
         `DTSTART:${fmt(start)}`,
         `DTEND:${fmt(end)}`,
-        `SUMMARY:${escapeICS(`BoozClub — ${state.host}`)}`,
+        'SUMMARY:' + escapeICS('BoozClub — ' + (state.host || '')),
         `LOCATION:${escapeICS(state.location || '')}`,
         `DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,
         'END:VEVENT',
         'END:VCALENDAR'
-      ].join('\r\n');
+      ].join('
+');
     }
 
     function escapeICS(str){
