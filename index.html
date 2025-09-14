@@ -111,7 +111,8 @@
       </div>
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
         <span class="status" id="syncStatus">Loading…</span>
-        <button class="btn" id="refreshBtn" title="Reload JSON">Refresh</button>        <button class="btn warn" id="editEventsBtn" title="Edit events.json on GitHub">Edit Events</button>
+        <button class="btn" id="refreshBtn" title="Reload JSON">Refresh</button>
+        <button class="btn warn" id="editEventsBtn" title="Edit events.json on GitHub">Edit Events</button>
         <button class="btn" id="shareBtn" title="Copy shareable summary">Share</button>
       </div>
     </header>
@@ -179,14 +180,6 @@
         <input id="dateInput" type="date" />
       </div>
       <div class="field">
-        <label for="timeInput">Time</label>
-        <input id="timeInput" type="time" />
-      </div>
-      <div class="field">
-        <label for="locationInput">Location / Address</label>
-        <input id="locationInput" placeholder="123 Whiskey Ln, Austin, TX" />
-      </div>
-      <div class="field">
         <label for="noteInput">Optional note</label>
         <textarea id="noteInput" rows="3" placeholder="Theme, what to bring, etc."></textarea>
       </div>
@@ -215,7 +208,7 @@
     const EVENTS_RAW = `${RAW_BASE}/events.json`;
 
     // --- Defaults ---
-    const DEFAULTS = { clubName:'BoozClub', clubTag:'Monthly Boozers Meet', host:'TBD', date:new Date().toISOString().slice(0,10), time:'19:00', location:'TBD', note:'', pin:'boozclub' };
+    const DEFAULTS = { clubName:'BoozClub', clubTag:'Monthly Boozers Meet', host:'TBD', date:new Date().toISOString().slice(0,10), note:'', pin:'boozclub' };
 
     // --- Elements ---
     const el = {
@@ -236,8 +229,6 @@
         clubTag: document.getElementById('clubTagInput'),
         host: document.getElementById('hostInput'),
         date: document.getElementById('dateInput'),
-        time: document.getElementById('timeInput'),
-        location: document.getElementById('locationInput'),
         note: document.getElementById('noteInput'),
         pin: document.getElementById('pinInput')
       },
@@ -281,8 +272,6 @@
       el.inputs.clubTag.value = state.clubTag;
       el.inputs.host.value = state.host;
       el.inputs.date.value = state.date;
-      el.inputs.time.value = state.time;
-      el.inputs.location.value = state.location;
       el.inputs.note.value = state.note;
       el.inputs.pin.value = state.pin;
 
@@ -338,14 +327,17 @@
     function applySchedule(events){
       // Normalize + sort ascending by date (no host auto-fill)
       const norm = events
-        .map(e => ({ date: (e.date||'').slice(0,10), host: e.host || '', location: (e.location||''), time: e.time || '19:00', endTime: e.endTime || null, note: e.note || '' }))
+        .map(e => ({ date: (e.date||'').slice(0,10), host: e.host || '', note: e.note || '' }))
         .filter(e=> e.date)
         .sort((a,b)=> a.date.localeCompare(b.date));
 
-      // Pick next upcoming (>= today and not explicitly skipped)
+      // Pick next upcoming (>= today) and not skipped/cancelled
       const today = new Date().toISOString().slice(0,10);
-      const next = norm.find(e => { const n=(e.note||'').toLowerCase(); return e.date >= today && !n.includes('skipp') && !n.includes('cancel'); }) || norm[norm.length-1];
-      if(next){ Object.assign(state, { host: next.host, date: next.date, time: next.time || '19:00', location: next.location, note: next.note || '' }); }
+      const next = norm.find(e => {
+        const n=(e.note||'').toLowerCase();
+        return e.date >= today && !n.includes('skipp') && !n.includes('cancel');
+      }) || norm[norm.length-1];
+      if(next){ Object.assign(state, { host: next.host, date: next.date, note: next.note || '' }); }
 
       renderSchedule(norm);
     }
@@ -407,8 +399,6 @@
       }
     });
     el.refreshBtn.addEventListener('click', ()=> syncFromRemote(true));
-      if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo.'); }
-    });
     el.editEventsBtn.addEventListener('click', ()=>{
       const url = getGithubEditURL('events.json');
       if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo.'); }
@@ -423,8 +413,6 @@
         clubTag: el.inputs.clubTag.value.trim() || DEFAULTS.clubTag,
         host: el.inputs.host.value.trim(),
         date: el.inputs.date.value,
-        time: el.inputs.time.value,
-        location: el.inputs.location.value.trim(),
         note: el.inputs.note.value,
         pin: el.inputs.pin.value || DEFAULTS.pin
       });
@@ -452,16 +440,18 @@
 
     // --- Serializers ---
     function toJSON(){
-      return { clubName: state.clubName, clubTag: state.clubTag, host: state.host, date: state.date, time: state.time, location: state.location, note: state.note, pin: state.pin };
+      return { clubName: state.clubName, clubTag: state.clubTag, host: state.host, date: state.date, note: state.note, pin: state.pin };
     }
 
     function buildICS(){
-      const uid = `${Date.now()}@boozclub.local`;
+      // All-day event with date only (no public time/location)
       const [y,m,d] = (state.date || '').split('-').map(Number);
-      const [hh,mm] = (state.time || '19:00').split(':').map(Number);
-      const start = new Date(y, (m||1)-1, d||1, hh||19, mm||0, 0);
-      const end = new Date(start.getTime() + 2*60*60*1000);
-      const fmt = (dt)=> dt.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const pad = (n)=> String(n).padStart(2,'0');
+      const ymd = `${String(y).padStart(4,'0')}${pad(m||1)}${pad(d||1)}`;
+      const endDate = new Date((y||1970), (m||1)-1, (d||1)+1);
+      const ymdEnd = `${endDate.getFullYear()}${pad(endDate.getMonth()+1)}${pad(endDate.getDate())}`;
+      const now = new Date();
+      const fmtStamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
       return [
         'BEGIN:VCALENDAR',
         'VERSION:2.0',
@@ -469,12 +459,11 @@
         'CALSCALE:GREGORIAN',
         'METHOD:PUBLISH',
         'BEGIN:VEVENT',
-        `UID:${uid}`,
-        `DTSTAMP:${fmt(new Date())}`,
-        `DTSTART:${fmt(start)}`,
-        `DTEND:${fmt(end)}`,
+        `UID:${Date.now()}@boozclub.local`,
+        `DTSTAMP:${fmtStamp}`,
+        `DTSTART;VALUE=DATE:${ymd}`,
+        `DTEND;VALUE=DATE:${ymdEnd}`,
         'SUMMARY:' + escapeICS('BoozClub — ' + (state.host || '')),
-        `LOCATION:${escapeICS('Private address on file')}`,
         `DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,
         'END:VEVENT',
         'END:VCALENDAR'
@@ -506,8 +495,9 @@
       const tests = []; const ok = (name, cond)=> tests.push({ name, pass: !!cond });
       const sample = 'a,b;c\\d\nline'; const escaped = escapeICS(sample);
       ok('escapeICS escapes , ; \\ and newline', escaped === 'a\\,b\\;c\\\\d\\nline');
-      const ics = buildICS(); ok('ICS has sections', /BEGIN:VCALENDAR/.test(ics) && /BEGIN:VEVENT/.test(ics) && /END:VEVENT/.test(ics) && /END:VCALENDAR/.test(ics));
-      ok('toJSON exposes required keys', ['clubName','clubTag','host','date','time','location','note','pin'].every(k => k in toJSON()));
+      const ics1 = buildICS(); ok('ICS has sections', /BEGIN:VCALENDAR/.test(ics1) && /BEGIN:VEVENT/.test(ics1) && /END:VEVENT/.test(ics1) && /END:VCALENDAR/.test(ics1));
+      ok('toJSON exposes required keys', ['clubName','clubTag','host','date','note','pin'].every(k => k in toJSON()));
+      const ics2 = buildICS(); ok('ICS is all-day', /DTSTART;VALUE=DATE:/i.test(ics2) && /DTEND;VALUE=DATE:/i.test(ics2));
       ok('edit events URL correct', getGithubEditURL('events.json').endsWith('/events.json'));
       const failed = tests.filter(t=>!t.pass); if (failed.length){ console.warn('[BoozClub tests] FAILED', failed); } else { console.log('[BoozClub tests] All tests passed'); }
     })();
