@@ -136,7 +136,7 @@
           <button class="btn" id="copyBtn">Copy Address</button>
         </div>
         <p class="footnote" id="noteValue" style="display:none"></p>
-        <p class="footnote">Data source: <code>event.json</code> in this site’s repository.</p>
+        <p class="footnote">Data source: <code>events.json</code> (schedule) or <code>event.json</code> (single event) in this site’s repository.</p>
       </div>
     </section>
 
@@ -205,7 +205,9 @@
     // --- Config ---
     const KEY = 'boozclub_event_v3';
     const GH = { user:'elicohendfw-dev', repo:'boozclub', branch:'main' };
-    const EVENT_PATH = './event.json'; // central JSON served by GitHub Pages
+    const EVENT_PATH = './event.json'; // legacy single-event JSON (fallback)
+    const EVENTS_PATH = './events.json'; // new schedule JSON { events: [...] }
+    const HOSTS_PATH = './hosts.json';  // optional directory { hosts: [...] }
 
     // --- Defaults ---
     const DEFAULTS = {
@@ -304,35 +306,106 @@
       document.getElementById('nextEventHeading').textContent = `Hosted by ${state.host || 'TBD'}`;
     }
 
-    // --- Sync from central JSON (with safe fallback) ---
+    // --- Sync from central JSON (with schedule support) ---
     async function syncFromRemote(force){
       setStatus('Loading…', 'loading');
       const qs = force ? `?t=${Date.now()}` : '';
-      try {
-        const res = await fetch(EVENT_PATH + qs, { cache: 'no-store' });
-        if(!res.ok) throw new Error('HTTP '+res.status);
-        const remote = await res.json();
-        Object.assign(state, { ...DEFAULTS, ...remote });
+
+      // Try new schedule format first
+      let loaded = false;
+      try{
+        const sched = await fetchJSON(EVENTS_PATH + qs);
+        if (sched && Array.isArray(sched.events)){
+          applySchedule(sched.events);
+          loaded = true;
+        }
+      }catch(_){/* ignore */}
+
+      // Optionally load hosts directory (not required for display)
+      try{ window.__hostsDir = await fetchJSON(HOSTS_PATH + qs); }catch(_){ window.__hostsDir = null; }
+
+      // Fallback to legacy single-event JSON
+      if(!loaded){
+        try{
+          const single = await fetchJSON(EVENT_PATH + qs);
+          Object.assign(state, { ...DEFAULTS, ...single });
+          loaded = true;
+        }catch(_){ /* still not loaded */ }
+      }
+
+      // Finalize
+      if(loaded){
         try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
         render();
         setStatus('Synced', 'ok');
-      } catch (e1) {
-        // fallback to raw.githubusercontent.com (read-only, CORS-friendly)
-        const rawUrl = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/${GH.branch}/event.json`;
-        try{
-          const res2 = await fetch(rawUrl, { cache: 'no-store' });
-          if(!res2.ok) throw new Error('HTTP '+res2.status);
-          const remote2 = await res2.json();
-          Object.assign(state, { ...DEFAULTS, ...remote2 });
-          try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
-          render();
-          setStatus('Synced (raw)', 'ok');
-          console.warn('[BoozClub] Using raw.githubusercontent.com fallback');
-        }catch(e2){
-          console.error('[BoozClub] Failed to load event.json', e1, e2);
-          setStatus('Offline / using local', 'warn');
-        }
+      } else {
+        setStatus('Offline / using local', 'warn');
       }
+    }
+
+    function applySchedule(events){
+      // Normalize + sort ascending by date
+      const norm = events
+        .map(e => ({
+          date: (e.date||'').slice(0,10),
+          host: e.host || '',
+          location: e.location || '',
+          time: e.time || '19:00',
+          endTime: e.endTime || null,
+          note: e.note || ''
+        }))
+        .filter(e=> e.date)
+        .sort((a,b)=> a.date.localeCompare(b.date));
+
+      // Pick next upcoming (>= today and not explicitly skipped)
+      const today = new Date().toISOString().slice(0,10);
+      const next = norm.find(e => e.date >= today && (e.note||'').toLowerCase() !== 'skipped') || norm[norm.length-1];
+      if(next){ Object.assign(state, {
+        host: next.host, date: next.date, time: next.time || '19:00', location: next.location, note: next.note || ''
+      }); }
+
+      // Render schedule list
+      renderSchedule(norm);
+    }
+
+    function renderSchedule(list){
+      const mountId = 'scheduleMount';
+      let mount = document.getElementById(mountId);
+      if(!mount){
+        const section = document.createElement('section');
+        section.className = 'card';
+        section.style.marginTop = '18px';
+        section.innerHTML = `<div style="padding:18px">
+          <h3 style="margin:0 0 8px 0; font-size:1rem">Schedule</h3>
+          <div id="${mountId}"></div>
+        </div>`;
+        document.querySelector('.wrap').appendChild(section);
+        mount = section.querySelector('#'+mountId);
+      }
+      if(!list || !list.length){ mount.textContent = 'No events found.'; return; }
+      const rows = list.map(e=> `<tr>
+          <td>${formatDate(e.date)}</td>
+          <td>${e.host || '—'}</td>
+          <td>${e.location ? `<a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.location)}" target="_blank" rel="noopener">Map</a>` : '—'}</td>
+          <td>${formatTime(e.time)}</td>
+          <td>${e.note||''}</td>
+        </tr>`).join('');
+      mount.innerHTML = `<div style="overflow:auto"><table style="width:100%; border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Date</th>
+          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Host</th>
+          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Location</th>
+          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Time</th>
+          <th style="text-align:left; padding:8px 6px; border-bottom:1px solid rgba(148,163,184,.35)">Note</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+    }
+
+    async function fetchJSON(url){
+      const res = await fetch(url, { cache: 'no-store' });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      return res.json();
     }
 
     // --- UI helpers ---
@@ -513,7 +586,7 @@
     }
     function getGithubEditURL(){
       if(!GH.user || !GH.repo) return '';
-      return `https://github.com/${GH.user}/${GH.repo}/edit/${GH.branch}/event.json`;
+      return `https://github.com/${GH.user}/${GH.repo}/edit/${GH.branch}/events.json`;
     }
 
     // --- Minimal self-tests (console) ---
