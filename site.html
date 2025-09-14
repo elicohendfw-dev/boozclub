@@ -12,8 +12,9 @@
       --card:#ffffff;         /* card background */
       --text:#0f172a;         /* primary text */
       --muted:#475569;        /* secondary text */
-      --accent:#b45309;       /* warm amber accent */
-      --ring:rgba(180,83,9,.4);
+      --primary:#1e3a8a;      /* blue */
+      --accent:#dc2626;       /* red */
+      --ring:rgba(220,38,38,.4);
       --shadow: 0 10px 20px rgba(0,0,0,.08);
       --radius: 18px;
     }
@@ -23,16 +24,17 @@
         --card:#0f172a;
         --text:#e5e7eb;
         --muted:#94a3b8;
-        --accent:#f59e0b;
-        --ring:rgba(245,158,11,.35);
+        --primary:#60a5fa; /* lighter blue for dark mode */
+        --accent:#ef4444;  /* red-500 */
+        --ring:rgba(239,68,68,.35);
         --shadow: 0 10px 24px rgba(0,0,0,.35);
       }
     }
     *{box-sizing:border-box}
     body{
       margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-      color:var(--text); background:radial-gradient(1000px 600px at 10% -10%, rgba(245,158,11,.08), transparent 60%),
-                         radial-gradient(1200px 700px at 120% -20%, rgba(30,64,175,.12), transparent 50%), var(--bg);
+      color:var(--text); background:radial-gradient(1000px 600px at 10% -10%, rgba(30,64,175,.10), transparent 60%),
+                         radial-gradient(1200px 700px at 120% -20%, rgba(220,38,38,.10), transparent 50%), var(--bg);
     }
     .wrap{max-width:920px; margin:0 auto; padding:28px 20px 64px}
     header{
@@ -41,7 +43,7 @@
     .brand{display:flex; align-items:center; gap:12px}
     .logo{
       width:44px; height:44px; border-radius:12px; background:
-        conic-gradient(from 210deg, rgba(245,158,11,.25), rgba(99,102,241,.25), rgba(245,158,11,.25));
+        conic-gradient(from 210deg, rgba(30,64,175,.25), rgba(220,38,38,.25), rgba(30,64,175,.25));
       display:grid; place-items:center; box-shadow:var(--shadow);
       position:relative; overflow:hidden;
     }
@@ -54,6 +56,8 @@
     .hero h2{font-size:1.1rem; margin:.25rem 0 0}
     .tag{display:inline-flex; align-items:center; gap:8px; font-size:.85rem; color:var(--muted)}
     .tag .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 6px var(--ring)}
+
+    .status{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; font-size:.75rem; color:var(--muted); border:1px solid rgba(148,163,184,.35)}
 
     .event{margin-top:16px; display:grid; grid-template-columns:1fr; gap:14px}
     .row{display:flex; align-items:center; gap:12px}
@@ -95,7 +99,13 @@
           <small id="clubTag">Monthly tasting & fellowship</small>
         </div>
       </div>
-      <button class="btn" id="shareBtn" title="Copy shareable summary">Share</button>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+        <span class="status" id="syncStatus">Loading…</span>
+        <button class="btn" id="refreshBtn" title="Reload event.json">Refresh</button>
+        <button class="btn" id="gitBtn" title="Edit event.json on GitHub">Edit on GitHub</button>
+        <button class="btn" id="downloadBtn" title="Download event.json">Download JSON</button>
+        <button class="btn" id="shareBtn" title="Copy shareable summary">Share</button>
+      </div>
     </header>
 
     <section class="card hero" aria-labelledby="nextEventHeading">
@@ -114,21 +124,22 @@
           <button class="btn" id="copyBtn">Copy Address</button>
         </div>
         <p class="footnote" id="noteValue" style="display:none"></p>
+        <p class="footnote">Data source: <code>event.json</code> in this site’s repository.</p>
       </div>
     </section>
 
     <footer>
-      <p>Want to update the details? Click the round button at the bottom-right. Changes are saved to your browser only (no server required).</p>
+      <p>Use the round button (bottom-right) to edit locally for preview. Click <b>Edit on GitHub</b> to publish updates to everyone.</p>
     </footer>
   </div>
 
   <!-- Admin Floating Action Button -->
-  <div class="adminFab"><button class="fab" id="adminBtn" title="Edit event">✎</button></div>
+  <div class="adminFab"><button class="fab" id="adminBtn" title="Edit event (local preview)">✎</button></div>
 
   <!-- Admin Modal -->
   <dialog id="adminModal" aria-labelledby="adminTitle">
     <div class="modalHead">
-      <h3 id="adminTitle" style="margin:0">Edit Event</h3>
+      <h3 id="adminTitle" style="margin:0">Edit Event (Local Preview)</h3>
       <button class="btn" id="closeModal">Close</button>
     </div>
     <div class="modalBody">
@@ -170,15 +181,19 @@
         <input id="pinInput" type="password" placeholder="boozclub" />
       </div>
       <div class="modalActions">
+        <button class="btn" id="copyJsonBtn" title="Copy JSON for GitHub">Copy JSON</button>
         <button class="btn" id="resetBtn" title="Clear stored data">Reset</button>
-        <button class="btn primary" id="saveBtn">Save</button>
+        <button class="btn primary" id="saveBtn">Save (Preview)</button>
       </div>
-      <p class="hint">Tip: Use the <em>Share</em> button in the header to copy a summary to paste into texts or email.</p>
+      <p class="hint">To publish for everyone: click <b>Edit on GitHub</b> (header), paste the copied JSON into <code>event.json</code>, and commit.</p>
     </div>
   </dialog>
 
   <script>
-    const KEY = 'boozclub_event_v1';
+    const KEY = 'boozclub_event_v2';
+    const EVENT_PATH = './event.json'; // central JSON served by GitHub Pages
+    const GH = { user:'elicohendfw-dev', repo:'boozclub', branch:'main' };
+
     const DEFAULTS = {
       clubName: 'BoozClub',
       clubTag: 'Monthly tasting & fellowship',
@@ -202,7 +217,11 @@
       mapBtn: document.getElementById('mapBtn'),
       calBtn: document.getElementById('calendarBtn'),
       copyBtn: document.getElementById('copyBtn'),
+      downloadBtn: document.getElementById('downloadBtn'),
       shareBtn: document.getElementById('shareBtn'),
+      refreshBtn: document.getElementById('refreshBtn'),
+      gitBtn: document.getElementById('gitBtn'),
+      sync: document.getElementById('syncStatus'),
       adminBtn: document.getElementById('adminBtn'),
       adminModal: document.getElementById('adminModal'),
       closeModal: document.getElementById('closeModal'),
@@ -218,12 +237,15 @@
       },
       resetBtn: document.getElementById('resetBtn'),
       saveBtn: document.getElementById('saveBtn'),
+      copyJsonBtn: document.getElementById('copyJsonBtn'),
     };
 
-    const state = load();
+    const state = loadLocal();
+    inferRepoFromLocation();
     render();
+    syncFromRemote(false);
 
-    function load(){
+    function loadLocal(){
       try{
         const raw = localStorage.getItem(KEY);
         return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
@@ -232,11 +254,12 @@
       }
     }
 
-    function save(next){
+    function saveLocal(next){
       const merged = { ...state, ...next };
       try{ localStorage.setItem(KEY, JSON.stringify(merged)); }catch(e){}
       Object.assign(state, merged);
       render();
+      setStatus('Preview (local)', 'preview');
     }
 
     function render(){
@@ -264,6 +287,31 @@
       document.getElementById('nextEventHeading').textContent = `Hosted by ${state.host || 'TBD'}`;
     }
 
+    async function syncFromRemote(force){
+      setStatus('Loading…', 'loading');
+      try{
+        const url = EVENT_PATH + (force ? `?t=${Date.now()}` : '');
+        const res = await fetch(url, { cache: 'no-store' });
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const remote = await res.json();
+        Object.assign(state, { ...DEFAULTS, ...remote });
+        // update local cache to reflect central source
+        try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+        render();
+        setStatus('Synced', 'ok');
+      }catch(e){
+        setStatus('Offline / using local', 'warn');
+      }
+    }
+
+    function setStatus(text, tone){
+      el.sync.textContent = text;
+      el.sync.style.borderColor = tone==='ok' ? 'rgba(22,163,74,.45)'
+        : tone==='warn' ? 'rgba(234,179,8,.55)'
+        : tone==='preview' ? 'rgba(59,130,246,.45)'
+        : 'rgba(148,163,184,.35)';
+    }
+
     function formatDate(yyyy_mm_dd){
       if(!yyyy_mm_dd) return '—';
       const [y,m,d] = yyyy_mm_dd.split('-').map(Number);
@@ -287,6 +335,7 @@
     });
     el.calBtn.addEventListener('click', ()=>{
       const ics = buildICS();
+      assert('toJSON has required keys', (function(o){ const k = ['clubName','clubTag','host','date','time','location','note','pin']; return k.every(x=>x in o); })(toJSON()));
       const blob = new Blob([ics], { type:'text/calendar;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -303,7 +352,26 @@
       }
     });
 
-    // Admin
+    el.refreshBtn.addEventListener('click', ()=> syncFromRemote(true));
+
+    el.downloadBtn.addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify(toJSON(), null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'event.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    el.gitBtn.addEventListener('click', async ()=>{
+      const json = JSON.stringify(toJSON(), null, 2);
+      try { await navigator.clipboard.writeText(json); alert('event.json copied to clipboard'); } catch {}
+      const url = getGithubEditURL();
+      if(url){ window.open(url, '_blank'); }
+      else { alert('Set your GitHub repo to enable one-click edit.'); }
+    });
+
+    // Admin (local preview)
     el.adminBtn.addEventListener('click', async ()=>{
       const ok = await verifyPIN();
       if(ok){ el.adminModal.showModal(); }
@@ -311,7 +379,7 @@
     el.closeModal.addEventListener('click', ()=> el.adminModal.close());
 
     el.saveBtn.addEventListener('click', ()=>{
-      save({
+      saveLocal({
         clubName: el.inputs.clubName.value.trim() || DEFAULTS.clubName,
         clubTag: el.inputs.clubTag.value.trim() || DEFAULTS.clubTag,
         host: el.inputs.host.value.trim(),
@@ -332,11 +400,29 @@
       }
     });
 
+    el.copyJsonBtn.addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText(JSON.stringify(toJSON(), null, 2)); alert('JSON copied'); }
+      catch{ alert('Copy failed'); }
+    });
+
     function verifyPIN(){
       return new Promise((resolve)=>{
         const attempt = prompt('Enter admin PIN to edit (default: "boozclub")') || '';
         resolve(attempt === state.pin);
       });
+    }
+
+    function toJSON(){
+      return {
+        clubName: state.clubName,
+        clubTag: state.clubTag,
+        host: state.host,
+        date: state.date,
+        time: state.time,
+        location: state.location,
+        note: state.note,
+        pin: state.pin
+      };
     }
 
     function buildICS(){
@@ -363,13 +449,59 @@
         `LOCATION:${escapeICS(state.location || '')}`,
         `DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,
         'END:VEVENT',
-        'END:VCALENDAR' 
+        'END:VCALENDAR'
       ].join('\r\n');
     }
 
     function escapeICS(str){
-      return String(str).replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;');
+      return String(str)
+        .replace(/\\/g, '\\\\')   // backslash
+        .replace(/\n/g, '\\n')      // newline
+        .replace(/,/g, '\\,')       // comma
+        .replace(/;/g, '\\;');      // semicolon
     }
+
+    // GitHub helpers
+    function inferRepoFromLocation(){
+      try{
+        const host = location.hostname; // e.g., user.github.io
+        const pathSegs = location.pathname.split('/').filter(Boolean);
+        if(host.endsWith('github.io')){
+          GH.user = host.split('.')[0];
+          GH.repo = pathSegs.length ? pathSegs[0] : `${GH.user}.github.io`;
+        }
+      }catch(e){}
+    }
+
+    function getGithubEditURL(){
+      if(!GH.user || !GH.repo) return '';
+      return `https://github.com/${GH.user}/${GH.repo}/edit/${GH.branch}/event.json`;
+    }
+
+    // -------- Minimal self-tests (visible in DevTools console) --------
+    (function runSelfTests(){
+      const tests = [];
+      function assert(name, cond){ tests.push({ name, pass: !!cond }); }
+
+      // escapeICS tests
+      const sample = 'a,b;c\\d\nline';
+      const escaped = escapeICS(sample);
+      assert('escapeICS adds escapes for , ; \\ and newline',
+        escaped === 'a\\,b\\;c\\\\d\\nline');
+
+      // buildICS tests
+      const ics = buildICS();
+      assert('ICS contains required sections',
+        /BEGIN:VCALENDAR/.test(ics) && /BEGIN:VEVENT/.test(ics) && /END:VEVENT/.test(ics) && /END:VCALENDAR/.test(ics));
+
+      // report
+      const failed = tests.filter(t=>!t.pass);
+      if (failed.length){
+        console.warn('[BoozClub tests] FAILED', failed);
+      } else {
+        console.log('[BoozClub tests] All tests passed');
+      }
+    })();
   </script>
 </body>
 </html>
