@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BoozClub — Monthly Tasting</title>
+  <meta name="description" content="BoozClub: monthly host, date, time, and location." />
+  <meta name="color-scheme" content="light dark" />
+  <style>
+    :root{
+      --bg:#f8fafc;           /* page background */
+      --card:#ffffff;         /* card background */
+      --text:#0f172a;         /* primary text */
+      --muted:#475569;        /* secondary text */
+      --accent:#b45309;       /* warm amber accent */
+      --ring:rgba(180,83,9,.4);
+      --shadow: 0 10px 20px rgba(0,0,0,.08);
+      --radius: 18px;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#0b1220;
+        --card:#0f172a;
+        --text:#e5e7eb;
+        --muted:#94a3b8;
+        --accent:#f59e0b;
+        --ring:rgba(245,158,11,.35);
+        --shadow: 0 10px 24px rgba(0,0,0,.35);
+      }
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--text); background:radial-gradient(1000px 600px at 10% -10%, rgba(245,158,11,.08), transparent 60%),
+                         radial-gradient(1200px 700px at 120% -20%, rgba(30,64,175,.12), transparent 50%), var(--bg);
+    }
+    .wrap{max-width:920px; margin:0 auto; padding:28px 20px 64px}
+    header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0 24px;
+    }
+    .brand{display:flex; align-items:center; gap:12px}
+    .logo{
+      width:44px; height:44px; border-radius:12px; background:
+        conic-gradient(from 210deg, rgba(245,158,11,.25), rgba(99,102,241,.25), rgba(245,158,11,.25));
+      display:grid; place-items:center; box-shadow:var(--shadow);
+      position:relative; overflow:hidden;
+    }
+    .logo::after{content:""; position:absolute; inset:1px; border-radius:11px; background:linear-gradient(145deg, rgba(255,255,255,.1), rgba(0,0,0,.15)); mix-blend-mode: overlay}
+    .brand h1{font-size:1.35rem; margin:0; letter-spacing:.3px}
+    .brand small{display:block; color:var(--muted); font-weight:500; letter-spacing:.2px}
+
+    .card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid rgba(148,163,184,.18)}
+    .hero{padding:26px; display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap}
+    .hero h2{font-size:1.1rem; margin:.25rem 0 0}
+    .tag{display:inline-flex; align-items:center; gap:8px; font-size:.85rem; color:var(--muted)}
+    .tag .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 6px var(--ring)}
+
+    .event{margin-top:16px; display:grid; grid-template-columns:1fr; gap:14px}
+    .row{display:flex; align-items:center; gap:12px}
+    .label{width:92px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.6px; font-size:.75rem}
+    .value{font-size:1.05rem}
+
+    .actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:18px}
+    .btn{appearance:none; border:1px solid rgba(148,163,184,.3); background:var(--card); color:var(--text); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
+    .btn.primary{background:var(--accent); color:#111827; border:1px solid rgba(0,0,0,.12)}
+    .btn:focus{outline:3px solid var(--ring); outline-offset:2px}
+
+    .footnote{margin-top:14px; color:var(--muted); font-size:.9rem}
+
+    .adminFab{position:fixed; right:18px; bottom:18px; z-index:50}
+    .fab{width:52px; height:52px; border-radius:50%; display:grid; place-items:center; background:var(--accent); color:#111827; font-weight:800; border:1px solid rgba(0,0,0,.2); box-shadow:var(--shadow); cursor:pointer}
+
+    dialog{border:none; border-radius:16px; width:min(580px, 92vw); box-shadow:var(--shadow); background:var(--card); color:var(--text)}
+    dialog::backdrop{background:rgba(2,6,23,.45)}
+    .modalHead{display:flex; align-items:center; justify-content:space-between; padding:18px 18px 6px}
+    .modalBody{padding:4px 18px 18px}
+    .field{display:grid; gap:6px; margin:12px 0}
+    .field label{font-weight:700; font-size:.9rem}
+    .field input, .field textarea{
+      font: inherit; padding:10px 12px; border-radius:12px; border:1px solid rgba(148,163,184,.35); background:var(--bg); color:var(--text)
+    }
+    .modalActions{display:flex; gap:10px; justify-content:flex-end; margin-top:10px}
+    .hint{color:var(--muted); font-size:.85rem}
+
+    footer{margin-top:36px; color:var(--muted); font-size:.9rem}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true">🍷</div>
+        <div>
+          <h1 id="clubName">BoozClub</h1>
+          <small id="clubTag">Monthly tasting & fellowship</small>
+        </div>
+      </div>
+      <button class="btn" id="shareBtn" title="Copy shareable summary">Share</button>
+    </header>
+
+    <section class="card hero" aria-labelledby="nextEventHeading">
+      <div>
+        <span class="tag"><span class="dot" aria-hidden="true"></span> Next Gathering</span>
+        <h2 id="nextEventHeading">See you soon 🍻</h2>
+        <div class="event">
+          <div class="row"><div class="label">Host</div><div class="value" id="hostValue">—</div></div>
+          <div class="row"><div class="label">Date</div><div class="value" id="dateValue">—</div></div>
+          <div class="row"><div class="label">Time</div><div class="value" id="timeValue">—</div></div>
+          <div class="row"><div class="label">Location</div><div class="value" id="locationValue">—</div></div>
+        </div>
+        <div class="actions">
+          <button class="btn" id="mapBtn">Open in Maps</button>
+          <button class="btn" id="calendarBtn">Save to Calendar (.ics)</button>
+          <button class="btn" id="copyBtn">Copy Address</button>
+        </div>
+        <p class="footnote" id="noteValue" style="display:none"></p>
+      </div>
+    </section>
+
+    <footer>
+      <p>Want to update the details? Click the round button at the bottom-right. Changes are saved to your browser only (no server required).</p>
+    </footer>
+  </div>
+
+  <!-- Admin Floating Action Button -->
+  <div class="adminFab"><button class="fab" id="adminBtn" title="Edit event">✎</button></div>
+
+  <!-- Admin Modal -->
+  <dialog id="adminModal" aria-labelledby="adminTitle">
+    <div class="modalHead">
+      <h3 id="adminTitle" style="margin:0">Edit Event</h3>
+      <button class="btn" id="closeModal">Close</button>
+    </div>
+    <div class="modalBody">
+      <details>
+        <summary style="cursor:pointer; margin-bottom:6px"><strong>Quick Setup</strong> <span class="hint">(club name & tagline)</span></summary>
+        <div class="field">
+          <label for="clubNameInput">Club name</label>
+          <input id="clubNameInput" placeholder="BoozClub" />
+        </div>
+        <div class="field">
+          <label for="clubTagInput">Tagline</label>
+          <input id="clubTagInput" placeholder="Monthly tasting & fellowship" />
+        </div>
+      </details>
+
+      <div class="field">
+        <label for="hostInput">Host</label>
+        <input id="hostInput" placeholder="e.g., Mike Thompson" />
+      </div>
+      <div class="field">
+        <label for="dateInput">Date</label>
+        <input id="dateInput" type="date" />
+      </div>
+      <div class="field">
+        <label for="timeInput">Time</label>
+        <input id="timeInput" type="time" />
+      </div>
+      <div class="field">
+        <label for="locationInput">Location / Address</label>
+        <input id="locationInput" placeholder="123 Whiskey Ln, Austin, TX" />
+      </div>
+      <div class="field">
+        <label for="noteInput">Optional note</label>
+        <textarea id="noteInput" rows="3" placeholder="Theme, what to bring, etc."></textarea>
+      </div>
+      <div class="hint">Admin PIN protects edits on this device only. Change it below if you want.</div>
+      <div class="field">
+        <label for="pinInput">Admin PIN</label>
+        <input id="pinInput" type="password" placeholder="boozclub" />
+      </div>
+      <div class="modalActions">
+        <button class="btn" id="resetBtn" title="Clear stored data">Reset</button>
+        <button class="btn primary" id="saveBtn">Save</button>
+      </div>
+      <p class="hint">Tip: Use the <em>Share</em> button in the header to copy a summary to paste into texts or email.</p>
+    </div>
+  </dialog>
+
+  <script>
+    const KEY = 'boozclub_event_v1';
+    const DEFAULTS = {
+      clubName: 'BoozClub',
+      clubTag: 'Monthly tasting & fellowship',
+      host: 'TBD',
+      date: new Date().toISOString().slice(0,10), // yyyy-mm-dd
+      time: '19:00',
+      location: 'TBD',
+      note: '',
+      pin: 'boozclub'
+    };
+
+    // Elements
+    const el = {
+      clubName: document.getElementById('clubName'),
+      clubTag: document.getElementById('clubTag'),
+      host: document.getElementById('hostValue'),
+      date: document.getElementById('dateValue'),
+      time: document.getElementById('timeValue'),
+      location: document.getElementById('locationValue'),
+      note: document.getElementById('noteValue'),
+      mapBtn: document.getElementById('mapBtn'),
+      calBtn: document.getElementById('calendarBtn'),
+      copyBtn: document.getElementById('copyBtn'),
+      shareBtn: document.getElementById('shareBtn'),
+      adminBtn: document.getElementById('adminBtn'),
+      adminModal: document.getElementById('adminModal'),
+      closeModal: document.getElementById('closeModal'),
+      inputs: {
+        clubName: document.getElementById('clubNameInput'),
+        clubTag: document.getElementById('clubTagInput'),
+        host: document.getElementById('hostInput'),
+        date: document.getElementById('dateInput'),
+        time: document.getElementById('timeInput'),
+        location: document.getElementById('locationInput'),
+        note: document.getElementById('noteInput'),
+        pin: document.getElementById('pinInput')
+      },
+      resetBtn: document.getElementById('resetBtn'),
+      saveBtn: document.getElementById('saveBtn'),
+    };
+
+    const state = load();
+    render();
+
+    function load(){
+      try{
+        const raw = localStorage.getItem(KEY);
+        return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
+      }catch(e){
+        return { ...DEFAULTS };
+      }
+    }
+
+    function save(next){
+      const merged = { ...state, ...next };
+      try{ localStorage.setItem(KEY, JSON.stringify(merged)); }catch(e){}
+      Object.assign(state, merged);
+      render();
+    }
+
+    function render(){
+      el.clubName.textContent = state.clubName;
+      el.clubTag.textContent = state.clubTag;
+      el.host.textContent = state.host || 'TBD';
+      el.date.textContent = formatDate(state.date);
+      el.time.textContent = formatTime(state.time);
+      el.location.textContent = state.location || 'TBD';
+      if(state.note && state.note.trim().length){
+        el.note.style.display = 'block';
+        el.note.textContent = state.note.trim();
+      } else { el.note.style.display = 'none'; }
+
+      // Prefill modal inputs
+      el.inputs.clubName.value = state.clubName;
+      el.inputs.clubTag.value = state.clubTag;
+      el.inputs.host.value = state.host;
+      el.inputs.date.value = state.date;
+      el.inputs.time.value = state.time;
+      el.inputs.location.value = state.location;
+      el.inputs.note.value = state.note;
+      el.inputs.pin.value = state.pin;
+
+      document.getElementById('nextEventHeading').textContent = `Hosted by ${state.host || 'TBD'}`;
+    }
+
+    function formatDate(yyyy_mm_dd){
+      if(!yyyy_mm_dd) return '—';
+      const [y,m,d] = yyyy_mm_dd.split('-').map(Number);
+      const dt = new Date(Date.UTC(y, m-1, d)); // avoid TZ off-by-one
+      return dt.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    }
+    function formatTime(hh_mm){
+      if(!hh_mm) return '—';
+      const [h,m] = hh_mm.split(':').map(Number);
+      const dt = new Date(); dt.setHours(h, m, 0, 0);
+      return dt.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' });
+    }
+
+    // Buttons
+    el.mapBtn.addEventListener('click', ()=>{
+      const q = encodeURIComponent(state.location || '');
+      window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, '_blank');
+    });
+    el.copyBtn.addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText(state.location || ''); alert('Address copied'); }catch(e){ alert('Copy failed'); }
+    });
+    el.calBtn.addEventListener('click', ()=>{
+      const ics = buildICS();
+      const blob = new Blob([ics], { type:'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `BoozClub-${state.date}.ics`; a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    el.shareBtn.addEventListener('click', async ()=>{
+      const text = `BoozClub — Next Gathering\nHost: ${state.host}\nDate: ${formatDate(state.date)}\nTime: ${formatTime(state.time)}\nLocation: ${state.location}${state.note?`\nNote: ${state.note}`:''}`;
+      if (navigator.share) {
+        try { await navigator.share({ text }); } catch {}
+      } else {
+        try { await navigator.clipboard.writeText(text); alert('Summary copied'); } catch { alert('Copy failed'); }
+      }
+    });
+
+    // Admin
+    el.adminBtn.addEventListener('click', async ()=>{
+      const ok = await verifyPIN();
+      if(ok){ el.adminModal.showModal(); }
+    });
+    el.closeModal.addEventListener('click', ()=> el.adminModal.close());
+
+    el.saveBtn.addEventListener('click', ()=>{
+      save({
+        clubName: el.inputs.clubName.value.trim() || DEFAULTS.clubName,
+        clubTag: el.inputs.clubTag.value.trim() || DEFAULTS.clubTag,
+        host: el.inputs.host.value.trim(),
+        date: el.inputs.date.value,
+        time: el.inputs.time.value,
+        location: el.inputs.location.value.trim(),
+        note: el.inputs.note.value,
+        pin: el.inputs.pin.value || DEFAULTS.pin,
+      });
+      el.adminModal.close();
+    });
+
+    el.resetBtn.addEventListener('click', ()=>{
+      if(confirm('Clear saved details on this device?')){
+        localStorage.removeItem(KEY);
+        Object.assign(state, { ...DEFAULTS });
+        render();
+      }
+    });
+
+    function verifyPIN(){
+      return new Promise((resolve)=>{
+        const attempt = prompt('Enter admin PIN to edit (default: "boozclub")') || '';
+        resolve(attempt === state.pin);
+      });
+    }
+
+    function buildICS(){
+      const uid = `${Date.now()}@boozclub.local`;
+      // Build start/end in local time without TZ for simplicity
+      const [y,m,d] = (state.date || '').split('-').map(Number);
+      const [hh,mm] = (state.time || '19:00').split(':').map(Number);
+      const start = new Date(y, (m||1)-1, d||1, hh||19, mm||0, 0);
+      const end = new Date(start.getTime() + 2*60*60*1000); // default 2 hours
+      const fmt = (dt)=> dt.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+      return [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//BoozClub//Event//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+        'BEGIN:VEVENT',
+        `UID:${uid}`,
+        `DTSTAMP:${fmt(new Date())}`,
+        `DTSTART:${fmt(start)}`,
+        `DTEND:${fmt(end)}`,
+        `SUMMARY:${escapeICS(`BoozClub — ${state.host}`)}`,
+        `LOCATION:${escapeICS(state.location || '')}`,
+        `DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,
+        'END:VEVENT',
+        'END:VCALENDAR' 
+      ].join('\r\n');
+    }
+
+    function escapeICS(str){
+      return String(str).replace(/\\/g,'\\\\').replace(/\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;');
+    }
+  </script>
+</body>
+</html>
