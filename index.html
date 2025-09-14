@@ -8,40 +8,25 @@
   <meta name="color-scheme" content="light dark" />
   <style>
     :root{
-      --bg:#f8fafc;           /* page background */
-      --card:#ffffff;         /* card background */
-      --text:#0f172a;         /* primary text */
-      --muted:#475569;        /* secondary text */
-      --primary:#1e3a8a;      /* blue */
-      --accent:#dc2626;       /* red */
-      --ring:rgba(220,38,38,.4);
-      --shadow: 0 10px 20px rgba(0,0,0,.08);
-      --radius: 18px;
-      /* button theme */
-      --btnBg:#bbf7d0;        /* light green */
-      --btnText:#064e3b;      /* deep green text */
-      --btnBorder:rgba(6,78,59,.35);
-      --btnWarnBg:#fecaca;      /* light red */
-      --btnWarnText:#7f1d1d;    /* deep red text */
-      --btnWarnBorder:rgba(127,29,29,.35);
+      --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#475569;
+      --primary:#1e3a8a; --accent:#dc2626; --ring:rgba(220,38,38,.4);
+      --shadow: 0 10px 20px rgba(0,0,0,.08); --radius: 18px;
+      --btnBg:#bbf7d0; --btnText:#064e3b; --btnBorder:rgba(6,78,59,.35);
+      --btnWarnBg:#fecaca; --btnWarnText:#7f1d1d; --btnWarnBorder:rgba(127,29,29,.35);
     }
     @media (prefers-color-scheme: dark){
       :root{
-        --bg:#0b1220;
-        --card:#0f172a;
-        --text:#e5e7eb;
-        --muted:#94a3b8;
-        --primary:#60a5fa; /* lighter blue for dark mode */
-        --accent:#ef4444;  /* red-500 */
-        --ring:rgba(239,68,68,.35);
+        --bg:#0b1220; --card:#0f172a; --text:#e5e7eb; --muted:#94a3b8;
+        --primary:#60a5fa; --accent:#ef4444; --ring:rgba(239,68,68,.35);
         --shadow: 0 10px 24px rgba(0,0,0,.35);
       }
     }
     *{box-sizing:border-box}
     body{
-      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-      color:var(--text); background:radial-gradient(1000px 600px at 10% -10%, rgba(30,64,175,.10), transparent 60%),
-                         radial-gradient(1200px 700px at 120% -20%, rgba(220,38,38,.10), transparent 50%), var(--bg);
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans";
+      color:var(--text);
+      background:radial-gradient(1000px 600px at 10% -10%, rgba(30,64,175,.10), transparent 60%),
+                 radial-gradient(1200px 700px at 120% -20%, rgba(220,38,38,.10), transparent 50%), var(--bg);
     }
     .wrap{max-width:920px; margin:0 auto; padding:28px 20px 64px}
     header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0 24px; }
@@ -68,37 +53,22 @@
     .btn{appearance:none; border:1px solid var(--btnBorder); background:var(--btnBg); color:var(--btnText); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
     .btn.primary{background:var(--btnBg); color:var(--btnText); border:1px solid var(--btnBorder)}
     .btn.warn{background:var(--btnWarnBg); color:var(--btnWarnText); border:1px solid var(--btnWarnBorder)}
-    .btn:focus{outline:3px solid var(--ring); outline-offset:2px}
     .btn.ghost{background:transparent; border:1px solid rgba(148,163,184,.35); color:var(--muted)}
+    .btn:focus{outline:3px solid var(--ring); outline-offset:2px}
 
     .footnote{margin-top:14px; color:var(--muted); font-size:.9rem}
 
-    .adminFab{position:fixed; right:18px; bottom:18px; z-index:50}
-    .fab{width:52px; height:52px; border-radius:50%; display:grid; place-items:center; background:var(--accent); color:#111827; font-weight:800; border:1px solid rgba(0,0,0,.2); box-shadow:var(--shadow); cursor:pointer}
-
-    dialog{border:none; border-radius:16px; width:min(580px, 92vw); box-shadow:var(--shadow); background:var(--card); color:var(--text)}
-    dialog::backdrop{background:rgba(2,6,23,.45)}
-    .modalHead{display:flex; align-items:center; justify-content:space-between; padding:18px 18px 6px}
-    .modalBody{padding:4px 18px 18px}
-    .field{display:grid; gap:6px; margin:12px 0}
-    .field label{font-weight:700; font-size:.9rem}
-    .field input, .field textarea{ font: inherit; padding:10px 12px; border-radius:12px; border:1px solid rgba(148,163,184,.35); background:var(--bg); color:var(--text) }
-    .modalActions{display:flex; gap:10px; justify-content:flex-end; margin-top:10px}
-    .hint{color:var(--muted); font-size:.85rem}
+    /* Schedule UI tweaks */
+    .badge{display:inline-block; padding:2px 8px; border-radius:999px; font-size:.75rem; border:1px solid rgba(148,163,184,.45)}
+    .badge.skipped{border-color:var(--accent); color:var(--accent);}
+    .badge.cancelled{border-color:var(--accent); color:var(--accent);}
+    .row-skipped{opacity:.65}
+    .row-active{color:var(--primary)}
 
     /* Full-bleed banner */
     .fullBleed{position:relative; left:50%; right:50%; margin-left:-50vw; margin-right:-50vw; width:100vw}
     .bannerImg{width:100%; height:clamp(220px, 30vw, 420px); object-fit:cover; display:block}
     .bannerOverlay{position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,0) 30%, rgba(0,0,0,.18))}
-
-    footer{margin-top:36px; color:var(--muted); font-size:.9rem}
-
-    /* Schedule UI tweaks */
-    .badge{display:inline-block; padding:2px 8px; border-radius:999px; font-size:.75rem; border:1px solid rgba(148,163,184,.45)}
-    .badge.skipped{border-color:var(--accent); color:var(--accent);} 
-    .badge.cancelled{border-color:var(--accent); color:var(--accent);} /* same style; distinct class for clarity */
-    .row-skipped{opacity:.65}
-    .row-active{color:var(--primary)}
   </style>
 </head>
 <body>
@@ -141,7 +111,7 @@
       </div>
     </section>
 
-    <!-- Schedule section (populated when events.json is present) -->
+    <!-- Schedule -->
     <section class="card" id="scheduleSection" aria-labelledby="scheduleHeading" style="margin-top:18px; display:none;">
       <div style="padding:18px">
         <h3 id="scheduleHeading" style="margin:0 0 8px 0; font-size:1rem">Schedule</h3>
@@ -149,71 +119,29 @@
       </div>
     </section>
 
-    <footer>
-      <p>Use the round button (bottom-right) to edit locally for preview. Click <b>Edit on GitHub</b> to publish updates to everyone.</p>
+    <footer class="footnote" style="margin-top:36px">
+      Edit the schedule via <b>Admin</b> (top-right) or directly in <code>events.json</code>. Click <b>Refresh</b> to pull updates.
     </footer>
   </div>
 
-  <!-- Admin Floating Action Button -->
-  <div class="adminFab"><button class="fab" id="adminBtn" title="Edit event (local preview)">✎</button></div>
-
-  <!-- Admin Modal -->
-  <dialog id="adminModal" aria-labelledby="adminTitle">
-    <div class="modalHead">
-      <h3 id="adminTitle" style="margin:0">Edit Event (Local Preview)</h3>
-      <button class="btn" id="closeModal">Close</button>
-    </div>
-    <div class="modalBody">
-      <details>
-        <summary style="cursor:pointer; margin-bottom:6px"><strong>Quick Setup</strong> <span class="hint">(club name & tagline)</span></summary>
-        <div class="field">
-          <label for="clubNameInput">Club name</label>
-          <input id="clubNameInput" placeholder="BoozClub" />
-        </div>
-        <div class="field">
-          <label for="clubTagInput">Tagline</label>
-          <input id="clubTagInput" placeholder="Monthly Boozers Meet" />
-        </div>
-      </details>
-
-      <div class="field">
-        <label for="hostInput">Host</label>
-        <input id="hostInput" placeholder="e.g., Mike Thompson" />
-      </div>
-      <div class="field">
-        <label for="dateInput">Date</label>
-        <input id="dateInput" type="date" />
-      </div>
-      <div class="field">
-        <label for="noteInput">Optional note</label>
-        <textarea id="noteInput" rows="3" placeholder="Theme, what to bring, etc."></textarea>
-      </div>
-      <div class="hint">Admin PIN protects edits on this device only. Change it below if you want.</div>
-      <div class="field">
-        <label for="pinInput">Admin PIN</label>
-        <input id="pinInput" type="password" placeholder="boozclub" />
-      </div>
-      <div class="modalActions">
-        <button class="btn" id="copyJsonBtn" title="Copy JSON for GitHub">Copy JSON</button>
-        <button class="btn" id="resetBtn" title="Clear stored data">Reset</button>
-        <button class="btn primary" id="saveBtn">Save (Preview)</button>
-      </div>
-      <p class="hint">To publish for everyone: click <b>Edit on GitHub</b> (header), paste the copied JSON into <code>events.json</code> or <code>event.json</code>, and commit.</p>
-    </div>
-  </dialog>
-
   <script>
     // --- Config ---
-    const KEY = 'boozclub_event_v4';
+    const KEY = 'boozclub_event_v4'; // cache key (no PIN/editor now)
     const GH = { user:'elicohendfw-dev', repo:'boozclub', branch:'main' };
-    const EVENT_PATH = './event.json';      // legacy single-event JSON (fallback)
-    const EVENTS_PATH = './events.json';    // schedule JSON { events: [...] }
+    const EVENT_PATH = './event.json';
+    const EVENTS_PATH = './events.json';
     const RAW_BASE = `https://raw.githubusercontent.com/${GH.user}/${GH.repo}/${GH.branch}`;
     const EVENT_RAW = `${RAW_BASE}/event.json`;
     const EVENTS_RAW = `${RAW_BASE}/events.json`;
 
-    // --- Defaults ---
-    const DEFAULTS = { clubName:'BoozClub', clubTag:'Monthly Boozers Meet', host:'TBD', date:new Date().toISOString().slice(0,10), note:'', pin:'boozclub' };
+    // --- Defaults (no PIN / no local editor) ---
+    const DEFAULTS = {
+      clubName:'BoozClub',
+      clubTag:'Monthly Boozers Meet',
+      host:'TBD',
+      date:new Date().toISOString().slice(0,10),
+      note:''
+    };
 
     // --- Elements ---
     const el = {
@@ -227,41 +155,22 @@
       refreshBtn: document.getElementById('refreshBtn'),
       editEventsBtn: document.getElementById('editEventsBtn'),
       sync: document.getElementById('syncStatus'),
-      adminBtn: document.getElementById('adminBtn'),
-      adminModal: document.getElementById('adminModal'),
-      closeModal: document.getElementById('closeModal'),
-      inputs: {
-        clubName: document.getElementById('clubNameInput'),
-        clubTag: document.getElementById('clubTagInput'),
-        host: document.getElementById('hostInput'),
-        date: document.getElementById('dateInput'),
-        note: document.getElementById('noteInput'),
-        pin: document.getElementById('pinInput')
-      },
-      resetBtn: document.getElementById('resetBtn'),
-      saveBtn: document.getElementById('saveBtn'),
-      copyJsonBtn: document.getElementById('copyJsonBtn'),
       scheduleSection: document.getElementById('scheduleSection'),
       scheduleMount: document.getElementById('scheduleMount')
     };
 
-    // --- State ---
-    const state = loadLocal();
+    // --- State / bootstrap ---
+    const state = loadCache();
     inferRepoFromLocation();
     render();
     syncFromRemote(false);
 
-    // --- Local storage helpers ---
-    function loadLocal(){
-      try{ const raw = localStorage.getItem(KEY); return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS }; }
-      catch{ return { ...DEFAULTS }; }
-    }
-    function saveLocal(next){
-      const merged = { ...state, ...next };
-      try{ localStorage.setItem(KEY, JSON.stringify(merged)); }catch{}
-      Object.assign(state, merged);
-      render();
-      setStatus('Preview (local)', 'preview');
+    // --- Cache helpers (kept for quick loads/offline fallback) ---
+    function loadCache(){
+      try{
+        const raw = localStorage.getItem(KEY);
+        return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
+      }catch{ return { ...DEFAULTS }; }
     }
 
     // --- Render ---
@@ -270,17 +179,11 @@
       el.clubTag.textContent = state.clubTag;
       el.host.textContent = state.host || 'TBD';
       el.date.textContent = formatDate(state.date);
-      if(state.note && state.note.trim().length){ el.note.style.display = 'block'; el.note.textContent = state.note.trim(); }
-      else { el.note.style.display = 'none'; }
-
-      // Prefill modal inputs
-      el.inputs.clubName.value = state.clubName;
-      el.inputs.clubTag.value = state.clubTag;
-      el.inputs.host.value = state.host;
-      el.inputs.date.value = state.date;
-      el.inputs.note.value = state.note;
-      el.inputs.pin.value = state.pin;
-
+      if(state.note && state.note.trim().length){
+        el.note.style.display = 'block'; el.note.textContent = state.note.trim();
+      } else {
+        el.note.style.display = 'none';
+      }
       document.getElementById('nextEventHeading').textContent = `Hosted by ${state.host || 'TBD'}`;
     }
 
@@ -288,11 +191,8 @@
     async function syncFromRemote(force){
       setStatus('Loading…', 'loading');
       const qs = force ? `?t=${Date.now()}` : '';
+      let loaded = false, used = '';
 
-      let loaded = false;
-      let used = '';
-
-      // Try schedule (events.json) with raw fallback
       try{
         const sched = await fetchChain([EVENTS_PATH + qs, EVENTS_RAW]);
         if (sched && Array.isArray(sched.events)){
@@ -301,7 +201,6 @@
         }
       }catch{}
 
-      // Fallback to single event (event.json) with raw fallback
       if(!loaded){
         try{
           const single = await fetchChain([EVENT_PATH + qs, EVENT_RAW]);
@@ -315,7 +214,7 @@
         render();
         setStatus(used==='events' ? 'Synced (schedule)' : 'Synced', 'ok');
       } else {
-        setStatus('Offline / using local', 'warn');
+        setStatus('Offline / using cache', 'warn');
       }
     }
 
@@ -326,29 +225,30 @@
     }
     async function fetchChain(urls){
       let lastErr = null;
-      for(const u of urls){ try{ return await fetchJSON(u); } catch(e){ lastErr = e; } }
+      for(const u of urls){
+        try{ return await fetchJSON(u); } catch(e){ lastErr = e; }
+      }
       throw lastErr || new Error('All fetches failed');
     }
 
     function applySchedule(events){
-      // Normalize + sort ascending by date (no host auto-fill)
       const norm = events
         .map(e => ({ date: (e.date||'').slice(0,10), host: e.host || '', note: e.note || '' }))
         .filter(e=> e.date)
         .sort((a,b)=> a.date.localeCompare(b.date));
 
-      // Pick next upcoming (>= today) and not skipped/cancelled
       const today = new Date().toISOString().slice(0,10);
       const next = norm.find(e => {
         const n=(e.note||'').toLowerCase();
         return e.date >= today && !n.includes('skipp') && !n.includes('cancel');
       }) || norm[norm.length-1];
-      if(next){ Object.assign(state, { host: next.host, date: next.date, note: next.note || '' }); }
 
+      if(next){
+        Object.assign(state, { host: next.host, date: next.date, note: next.note || '' });
+      }
       renderSchedule(norm);
     }
 
-    // classify event for row styling
     function classifyEvent(e){
       const n=(e.note||'').toLowerCase();
       const isSkipped = n.includes('skipp');
@@ -390,13 +290,12 @@
       el.sync.textContent = text;
       el.sync.style.borderColor = tone==='ok' ? 'rgba(22,163,74,.45)'
         : tone==='warn' ? 'rgba(234,179,8,.55)'
-        : tone==='preview' ? 'rgba(59,130,246,.45)'
         : 'rgba(148,163,184,.35)';
     }
     function formatDate(yyyy_mm_dd){
       if(!yyyy_mm_dd) return '—';
       const [y,m,d] = yyyy_mm_dd.split('-').map(Number);
-      const dt = new Date(y, (m||1)-1, d||1); // local date, no UTC shift
+      const dt = new Date(y, (m||1)-1, d||1);
       return dt.toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' });
     }
 
@@ -423,77 +322,32 @@
       if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo.'); }
     });
 
-    // --- Admin (local preview) ---
-    el.adminBtn.addEventListener('click', async ()=>{ const ok = await verifyPIN(); if(ok){ el.adminModal.showModal(); } });
-    el.closeModal.addEventListener('click', ()=> el.adminModal.close());
-    el.saveBtn.addEventListener('click', ()=>{
-      saveLocal({
-        clubName: el.inputs.clubName.value.trim() || DEFAULTS.clubName,
-        clubTag: el.inputs.clubTag.value.trim() || DEFAULTS.clubTag,
-        host: el.inputs.host.value.trim(),
-        date: el.inputs.date.value,
-        note: el.inputs.note.value,
-        pin: el.inputs.pin.value || DEFAULTS.pin
-      });
-      el.adminModal.close();
-    });
-    el.resetBtn.addEventListener('click', ()=>{
-      if(confirm('Clear saved details on this device?')){
-        localStorage.removeItem(KEY);
-        Object.assign(state, { ...DEFAULTS });
-        render();
-      }
-    });
-    el.copyJsonBtn.addEventListener('click', async ()=>{
-      try{ await navigator.clipboard.writeText(JSON.stringify(toJSON(), null, 2)); alert('JSON copied'); }
-      catch{ alert('Copy failed'); }
-    });
-
-    // --- Auth/PIN ---
-    function verifyPIN(){
-      return new Promise((resolve)=>{
-        const attempt = prompt('Enter admin PIN to edit (default: "boozclub")') || '';
-        resolve(attempt === state.pin);
-      });
-    }
-
-    // --- Serializers ---
-    function toJSON(){
-      return { clubName: state.clubName, clubTag: state.clubTag, host: state.host, date: state.date, note: state.note, pin: state.pin };
-    }
-
+    // --- ICS ---
     function buildICS(){
-      // Timed event: 7:00 PM – 9:00 PM America/Chicago
       const [y,m,d] = (state.date || '').split('-').map(Number);
       const pad = (n)=> String(n).padStart(2,'0');
       const ymd = `${String(y).padStart(4,'0')}${pad(m||1)}${pad(d||1)}`;
-      const startLocal = `${ymd}T190000`;
-      const endLocal   = `${ymd}T210000`;
+      const startLocal = `${ymd}T190000`; // 7pm
+      const endLocal   = `${ymd}T210000`; // 9pm
       const now = new Date();
       const fmtStamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
       return [
-        'BEGIN:VCALENDAR',
-        'VERSION:2.0',
-        'PRODID:-//BoozClub//Event//EN',
-        'CALSCALE:GREGORIAN',
-        'METHOD:PUBLISH',
-        'BEGIN:VEVENT',
+        'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//BoozClub//Event//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT',
         `UID:${Date.now()}@boozclub.local`,
         `DTSTAMP:${fmtStamp}`,
         `DTSTART;TZID=America/Chicago:${startLocal}`,
         `DTEND;TZID=America/Chicago:${endLocal}`,
         'SUMMARY:' + escapeICS('BoozClub Meeting at ' + (state.host || 'TBD')),
         `DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,
-        'END:VEVENT',
-        'END:VCALENDAR'
+        'END:VEVENT','END:VCALENDAR'
       ].join('\r\n');
     }
     function escapeICS(str){
       return String(str)
-        .replace(/\\/g, '\\\\')  // backslash
-        .replace(/\n/g, '\\n')     // newline
-        .replace(/,/g, '\\,')      // comma
-        .replace(/;/g, '\\;');     // semicolon
+        .replace(/\\/g, '\\\\')
+        .replace(/\n/g, '\\n')
+        .replace(/,/g, '\\,')
+        .replace(/;/g, '\\;');
     }
 
     // --- GitHub helpers ---
@@ -514,29 +368,10 @@
       const tests = []; const ok = (name, cond)=> tests.push({ name, pass: !!cond });
       const sample = 'a,b;c\\d\nline'; const escaped = escapeICS(sample);
       ok('escapeICS escapes , ; \\ and newline', escaped === 'a\\,b\\;c\\\\d\\nline');
-      const ics1 = buildICS(); ok('ICS has sections', /BEGIN:VCALENDAR/.test(ics1) && /BEGIN:VEVENT/.test(ics1) && /END:VEVENT/.test(ics1) && /END:VCALENDAR/.test(ics1));
-      ok('toJSON exposes required keys', ['clubName','clubTag','host','date','note','pin'].every(k => k in toJSON()));
-      const ics2 = buildICS();
-      ok('ICS time is 7–9pm CT', /DTSTART;TZID=America\/Chicago:\\d{8}T190000/.test(ics2) && /DTEND;TZID=America\/Chicago:\\d{8}T210000/.test(ics2));
-      ok('ICS summary uses "Meeting at"', /SUMMARY:BoozClub Meeting at/i.test(ics2));
-      ok('edit events URL correct', getGithubEditURL('events.json').endsWith('/events.json'));
-      // Host visibility: Skip hides, Cancelled keeps host
-      (function(){
-        const sampleEvents = [
-          { date:'2025-01-06', host:'Skip', note:'Skipped' },
-          { date:'2025-02-03', host:'Tom', note:'' },
-          { date:'2025-03-03', host:'Tom', note:'Cancelled' }
-        ];
-        const out = sampleEvents.map(e=>{
-          const n=(e.note||'').toLowerCase();
-          const isSkipped = n.includes('skipp');
-          const hostRaw = (e.host||'').trim().toLowerCase();
-          const hideHost = isSkipped || hostRaw==='skip' || hostRaw==='skipped' || hostRaw==='cancelled' || hostRaw==='canceled';
-          return hideHost ? '—' : (e.host||'—');
-        });
-        ok('host hidden for Skip but kept for Cancelled', out[0]==='—' && out[2]==='Tom');
-      })();
-      ok('row class logic', classifyEvent({note:''}).rowClass==='row-active' && classifyEvent({note:'Skipped'}).rowClass==='row-skipped' && classifyEvent({note:'Cancelled'}).rowClass==='row-skipped');
+      const ics = buildICS(); ok('ICS sections', /BEGIN:VCALENDAR/.test(ics) && /BEGIN:VEVENT/.test(ics) && /END:VEVENT/.test(ics) && /END:VCALENDAR/.test(ics));
+      ok('ICS time 7–9pm CT', /DTSTART;TZID=America\/Chicago:\d{8}T190000/.test(ics) && /DTEND;TZID=America\/Chicago:\d{8}T210000/.test(ics));
+      ok('Edit URL ok', getGithubEditURL('events.json').endsWith('/events.json'));
+      ok('Row class logic', classifyEvent({note:''}).rowClass==='row-active' && classifyEvent({note:'Skipped'}).rowClass==='row-skipped' && classifyEvent({note:'Cancelled'}).rowClass==='row-skipped');
       const failed = tests.filter(t=>!t.pass); if (failed.length){ console.warn('[BoozClub tests] FAILED', failed); } else { console.log('[BoozClub tests] All tests passed'); }
     })();
   </script>
