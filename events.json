@@ -1,19 +1,19 @@
 {
   "events": [
-    { "date": "2025-01-01", "host": "Skip", "location": "", "time": "19:00", "endTime": "21:00", "note": "Skipped" },
-    { "date": "2025-02-01", "host": "Tom Cooksey", "location": "5208 Coral Springs Dr, Flower Mound, Texas 75022, United States", "time": "19:00", "endTime": "21:00", "note": "" },
-    { "date": "2025-03-01", "host": "Skip", "location": "", "time": "19:00", "endTime": "21:00", "note": "Skipped" },
-    { "date": "2025-04-01", "host": "Russell Stover", "location": "1429 Haverford Ln, Lantana, Texas 76226, United States", "time": "19:00", "endTime": "21:00", "note": "" },
-    { "date": "2025-05-01", "host": "Skip", "location": "", "time": "00:00", "endTime": "02:00", "note": "Skipped" },
-    { "date": "2025-06-01", "host": "Paul Lazzara", "location": "5012 Seville Ln, Flower Mound, Texas 75028, United States", "time": "19:00", "endTime": "21:00", "note": "" },
-    { "date": "2025-07-01", "host": "Skip", "location": "", "time": "19:00", "endTime": "21:00", "note": "Skipped" },
-    { "date": "2025-08-01", "host": "Bill Farr", "location": "5816 Lavon Dr, Flower Mound, Texas 75028, United States", "time": "19:00", "endTime": "21:00", "note": "" },
-    { "date": "2025-09-01", "host": "Skip", "location": "", "time": "19:00", "endTime": "21:00", "note": "Skipped" },
-    { "date": "2025-10-01", "host": "Eli", "location": "1808 Haversham Dr, Flower Mound, Texas 75022, United States", "time": "19:00", "endTime": "21:00", "note": "" },
-    { "date": "2025-11-01", "host": "Skip", "location": "", "time": "19:00", "endTime": "21:00", "note": "Skipped" },
-    { "date": "2025-12-01", "host": "John Ramsey", "location": "4204 Gallant Ct, Flower Mound, Texas 75028, United States", "time": "19:00", "endTime": "21:00", "note": "" },
-    { "date": "2026-01-01", "host": "Skip", "location": "", "time": "19:00", "endTime": "21:00", "note": "Skipped" },
-    { "date": "2026-02-01", "host": "Mike Petersen", "location": "2900 Hornby ln Flower Mound, TX 75022 United States", "time": "19:00", "endTime": "21:00", "note": "" },
-    { "date": "2026-03-01", "host": "Skip", "location": "", "time": "19:00", "endTime": "21:00", "note": "Skipped" }
+    { "date": "2025-01-06", "host": "Skip",           "location": "", "time": "19:00", "note": "Skipped" },
+    { "date": "2025-02-03", "host": "Tom Cooksey",    "location": "", "time": "19:00", "note": "" },
+    { "date": "2025-03-03", "host": "Skip",           "location": "", "time": "19:00", "note": "Skipped" },
+    { "date": "2025-04-07", "host": "Russell Stover", "location": "", "time": "19:00", "note": "" },
+    { "date": "2025-05-05", "host": "Skip",           "location": "", "time": "19:00", "note": "Skipped" },
+    { "date": "2025-06-02", "host": "Tom Liggett",    "location": "", "time": "19:00", "note": "" },
+    { "date": "2025-07-07", "host": "Skip",           "location": "", "time": "19:00", "note": "Skipped" },
+    { "date": "2025-08-04", "host": "Mike Petersen",  "location": "", "time": "19:00", "note": "" },
+    { "date": "2025-09-01", "host": "Steve Farr",     "location": "", "time": "19:00", "note": "" },
+    { "date": "2025-10-06", "host": "Eli",            "location": "", "time": "19:00", "note": "" },
+    { "date": "2025-11-03", "host": "Randy Riley",    "location": "", "time": "19:00", "note": "" },
+    { "date": "2025-12-01", "host": "John Ramsey",    "location": "", "time": "19:00", "note": "" },
+    { "date": "2026-01-05", "host": "Skip",           "location": "", "time": "19:00", "note": "Skipped" },
+    { "date": "2026-02-02", "host": "Bill Farr",      "location": "", "time": "19:00", "note": "" },
+    { "date": "2026-03-02", "host": "Paul Lazzara",   "location": "", "time": "19:00", "note": "" }
   ]
 }
