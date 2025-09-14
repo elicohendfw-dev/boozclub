@@ -85,6 +85,10 @@
     }
     .modalActions{display:flex; gap:10px; justify-content:flex-end; margin-top:10px}
     .hint{color:var(--muted); font-size:.85rem}
+    /* Full-bleed banner */
+    .fullBleed{position:relative; left:50%; right:50%; margin-left:-50vw; margin-right:-50vw; width:100vw}
+    .bannerImg{width:100%; height:clamp(220px, 30vw, 420px); object-fit:cover; display:block}
+    .bannerOverlay{position:absolute; inset:0; pointer-events:none; background:linear-gradient(180deg, rgba(0,0,0,.18), rgba(0,0,0,0) 30%, rgba(0,0,0,.18))}
 
     footer{margin-top:36px; color:var(--muted); font-size:.9rem}
   </style>
@@ -109,6 +113,12 @@
         <button class="btn" id="shareBtn" title="Copy shareable summary">Share</button>
       </div>
     </header>
+
+    <!-- Full-bleed banner image -->
+    <div class="fullBleed banner">
+      <img src="./boozers.png" alt="Assorted whiskey bottles on a shelf" class="bannerImg" loading="eager" fetchpriority="high">
+      <div class="bannerOverlay" aria-hidden="true"></div>
+    </div>
 
     <section class="card hero" aria-labelledby="nextEventHeading">
       <div>
