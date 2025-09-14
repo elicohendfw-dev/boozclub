@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BoozClub — Monthly Meetings</title>
+  <title>Monthly Meetings</title>
   <meta name="description" content="BoozClub: monthly host, date, time, and location." />
   <meta name="color-scheme" content="light dark" />
   <style>
@@ -437,8 +437,10 @@
     function formatDate(yyyy_mm_dd){
       if(!yyyy_mm_dd) return '—';
       const [y,m,d] = yyyy_mm_dd.split('-').map(Number);
-      const dt = new Date(Date.UTC(y, m-1, d)); // avoid TZ off-by-one
+      // Use local Date to avoid UTC shifting the displayed weekday (e.g., Sunday vs Monday)
+      const dt = new Date(y, (m||1)-1, d||1);
       return dt.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    });
     }
     function formatTime(hh_mm){
       if(!hh_mm) return '—';
