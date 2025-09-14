@@ -17,6 +17,10 @@
       --ring:rgba(220,38,38,.4);
       --shadow: 0 10px 20px rgba(0,0,0,.08);
       --radius: 18px;
+      /* button theme */
+      --btnBg:#bbf7d0;        /* light green */
+      --btnText:#064e3b;      /* deep green text */
+      --btnBorder:rgba(6,78,59,.35);
     }
     @media (prefers-color-scheme: dark){
       :root{
@@ -58,8 +62,8 @@
     .value{font-size:1.05rem}
 
     .actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:18px}
-    .btn{appearance:none; border:1px solid rgba(148,163,184,.3); background:var(--card); color:var(--text); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
-    .btn.primary{background:var(--accent); color:#111827; border:1px solid rgba(0,0,0,.12)}
+    .btn{appearance:none; border:1px solid var(--btnBorder); background:var(--btnBg); color:var(--btnText); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
+    .btn.primary{background:var(--btnBg); color:var(--btnText); border:1px solid var(--btnBorder)}
     .btn:focus{outline:3px solid var(--ring); outline-offset:2px}
 
     .footnote{margin-top:14px; color:var(--muted); font-size:.9rem}
@@ -402,7 +406,8 @@
       if(!yyyy_mm_dd) return '—';
       const [y,m,d] = yyyy_mm_dd.split('-').map(Number);
       const dt = new Date(y, (m||1)-1, d||1); // local date, no UTC shift
-      return dt.toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+      return dt.toLocaleDateString(undefined, { year:'numeric', month:'long', day:'numeric' });
+    });
     }
     function formatTime(hh_mm){
       if(!hh_mm) return '—';
@@ -415,7 +420,12 @@
     el.mapBtn.addEventListener('click', ()=>{ const q = encodeURIComponent(state.location || ''); window.open(`https://www.google.com/maps/search/?api=1&query=${q}`, '_blank'); });
     el.copyBtn.addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(state.location || ''); alert('Address copied'); }catch{ alert('Copy failed'); } });
     el.calBtn.addEventListener('click', ()=>{ const ics = buildICS(); const blob = new Blob([ics], { type:'text/calendar;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `BoozClub-${state.date}.ics`; a.click(); URL.revokeObjectURL(url); });
-    el.shareBtn.addEventListener('click', async ()=>{ const text = `BoozClub — Next Gathering\nHost: ${state.host}\nDate: ${formatDate(state.date)}\nTime: ${formatTime(state.time)}\nLocation: ${state.location}${state.note?`\nNote: ${state.note}`:''}`; if (navigator.share) { try { await navigator.share({ text }); } catch {} } else { try { await navigator.clipboard.writeText(text); alert('Summary copied'); } catch { alert('Copy failed'); } } });
+    el.shareBtn.addEventListener('click', async ()=>{ const text = `BoozClub — Next Gathering
+Host: ${state.host}
+Date: ${formatDate(state.date)}
+Time: ${formatTime(state.time)}
+Location: ${state.location}${state.note?`
+Note: ${state.note}`:''}`; if (navigator.share) { try { await navigator.share({ text }); } catch {} } else { try { await navigator.clipboard.writeText(text); alert('Summary copied'); } catch { alert('Copy failed'); } } });
     el.refreshBtn.addEventListener('click', ()=> syncFromRemote(true));
     el.gitBtn.addEventListener('click', async ()=>{ try { await navigator.clipboard.writeText(JSON.stringify(toJSON(), null, 2)); } catch {} const url = getGithubEditURL(); if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo to enable one-click edit.'); } });
     el.downloadBtn.addEventListener('click', ()=>{ const blob = new Blob([JSON.stringify(toJSON(), null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'event.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); });
@@ -441,9 +451,11 @@
       const start = new Date(y, (m||1)-1, d||1, hh||19, mm||0, 0);
       const end = new Date(start.getTime() + 2*60*60*1000);
       const fmt = (dt)=> dt.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-      return [ 'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//BoozClub//Event//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT',`UID:${uid}`,`DTSTAMP:${fmt(new Date())}`,`DTSTART:${fmt(start)}`,`DTEND:${fmt(end)}`,'SUMMARY:' + escapeICS('BoozClub — ' + (state.host || '')),`LOCATION:${escapeICS(state.location || '')}`,`DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,'END:VEVENT','END:VCALENDAR' ].join('\r\n');
+      return [ 'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//BoozClub//Event//EN','CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT',`UID:${uid}`,`DTSTAMP:${fmt(new Date())}`,`DTSTART:${fmt(start)}`,`DTEND:${fmt(end)}`,'SUMMARY:' + escapeICS('BoozClub — ' + (state.host || '')),`LOCATION:${escapeICS(state.location || '')}`,`DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,'END:VEVENT','END:VCALENDAR' ].join('
+');
     }
-    function escapeICS(str){ return String(str).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;'); }
+    function escapeICS(str){ return String(str).replace(/\/g, '\\').replace(/
+/g, '\n').replace(/,/g, '\,').replace(/;/g, '\;'); }
 
     // --- GitHub helpers ---
     function inferRepoFromLocation(){ try{ const host = location.hostname; const pathSegs = location.pathname.split('/').filter(Boolean); if(host.endsWith('github.io')){ GH.user = host.split('.')[0]; GH.repo = pathSegs.length ? pathSegs[0] : `${GH.user}.github.io`; } }catch{} }
@@ -452,8 +464,9 @@
     // --- Minimal self-tests (console) ---
     (function runSelfTests(){
       const tests = []; const ok = (name, cond)=> tests.push({ name, pass: !!cond });
-      const sample = 'a,b;c\\d\nline'; const escaped = escapeICS(sample);
-      ok('escapeICS escapes , ; \\ and newline', escaped === 'a\\,b\\;c\\\\d\\nline');
+      const sample = 'a,b;c\d
+line'; const escaped = escapeICS(sample);
+      ok('escapeICS escapes , ; \ and newline', escaped === 'a\,b\;c\\d\nline');
       const ics = buildICS(); ok('ICS has sections', /BEGIN:VCALENDAR/.test(ics) && /BEGIN:VEVENT/.test(ics) && /END:VEVENT/.test(ics) && /END:VCALENDAR/.test(ics));
       ok('toJSON exposes required keys', ['clubName','clubTag','host','date','time','location','note','pin'].every(k => k in toJSON()));
       ok('GitHub edit URL ends with events.json', getGithubEditURL().endsWith('/events.json'));
