@@ -132,9 +132,10 @@
           <div class="row"><div class="label">Host</div><div class="value" id="hostValue">—</div></div>
           <div class="row"><div class="label">Date</div><div class="value" id="dateValue">—</div></div>
         </div>
-        <p class="footnote" id="noteValue" style="display:none"></p>
-        <p class="footnote">Data source: <code>events.json</code> (schedule) or <code>event.json</code> (single event) in this site’s repository.</p>
-      </div>
+        <div class="actions">
+          <button class="btn" id="calendarBtn">Save to Calendar (.ics)</button>
+        </div>
+        <p class="footnote" id="noteValue" style="display:none"></p></div>
     </section>
 
     <!-- Schedule section (populated when events.json is present) -->
@@ -219,6 +220,7 @@
       date: document.getElementById('dateValue'),
       note: document.getElementById('noteValue'),
       shareBtn: document.getElementById('shareBtn'),
+      calBtn: document.getElementById('calendarBtn'),
       refreshBtn: document.getElementById('refreshBtn'),
       editEventsBtn: document.getElementById('editEventsBtn'),
       sync: document.getElementById('syncStatus'),
@@ -404,6 +406,14 @@
         try { await navigator.clipboard.writeText(text); alert('Summary copied'); } catch { alert('Copy failed'); }
       }
     });
+    el.calBtn.addEventListener('click', ()=>{
+      const ics = buildICS();
+      const blob = new Blob([ics], { type:'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `BoozClub-${state.date}.ics`; a.click();
+      URL.revokeObjectURL(url);
+    });
     el.refreshBtn.addEventListener('click', ()=> syncFromRemote(true));
     el.editEventsBtn.addEventListener('click', ()=>{
       const url = getGithubEditURL('events.json');
@@ -469,7 +479,7 @@
         `DTSTAMP:${fmtStamp}`,
         `DTSTART;VALUE=DATE:${ymd}`,
         `DTEND;VALUE=DATE:${ymdEnd}`,
-        'SUMMARY:' + escapeICS('BoozClub — ' + (state.host || '')),
+        'SUMMARY:' + escapeICS('BoozClub Meeting at ' + (state.host || 'TBD')),
         `DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,
         'END:VEVENT',
         'END:VCALENDAR'
@@ -504,6 +514,7 @@
       const ics1 = buildICS(); ok('ICS has sections', /BEGIN:VCALENDAR/.test(ics1) && /BEGIN:VEVENT/.test(ics1) && /END:VEVENT/.test(ics1) && /END:VCALENDAR/.test(ics1));
       ok('toJSON exposes required keys', ['clubName','clubTag','host','date','note','pin'].every(k => k in toJSON()));
       const ics2 = buildICS(); ok('ICS is all-day', /DTSTART;VALUE=DATE:/i.test(ics2) && /DTEND;VALUE=DATE:/i.test(ics2));
+      ok('ICS summary uses "Meeting at"', /SUMMARY:BoozClub Meeting at/i.test(ics2));
       ok('edit events URL correct', getGithubEditURL('events.json').endsWith('/events.json'));
       // Host visibility: Skip hides, Cancelled keeps host
       (function(){
