@@ -69,6 +69,7 @@
     .btn.primary{background:var(--btnBg); color:var(--btnText); border:1px solid var(--btnBorder)}
     .btn.warn{background:var(--btnWarnBg); color:var(--btnWarnText); border:1px solid var(--btnWarnBorder)}
     .btn:focus{outline:3px solid var(--ring); outline-offset:2px}
+    .btn.ghost{background:transparent; border:1px solid rgba(148,163,184,.35); color:var(--muted)}
 
     .footnote{margin-top:14px; color:var(--muted); font-size:.9rem}
 
@@ -115,6 +116,8 @@
         <button class="btn" id="refreshBtn" title="Reload JSON">Refresh</button>
         <button class="btn warn" id="editEventsBtn" title="Edit events.json on GitHub">Edit Events</button>
         <button class="btn" id="shareBtn" title="Copy shareable summary">Share</button>
+        <button class="btn" id="shareBtn" title="Copy shareable summary">Share</button>
+        <a class="btn ghost" href="./admin.html" title="Admin editor">Admin</a>
       </div>
     </header>
 
