@@ -1,19 +1,19 @@
 {
   "events": [
-    { "date": "2025-01-06", "host": "Skip",           "location": "", "time": "19:00", "note": "Skipped" },
-    { "date": "2025-02-03", "host": "Tom Cooksey",    "location": "5208 Coral Springs Dr, Flower Mound, TX 75022, United States", "time": "19:00", "note": "" },
-    { "date": "2025-03-03", "host": "Skip",           "location": "", "time": "19:00", "note": "Skipped" },
-    { "date": "2025-04-07", "host": "Russell Stover", "location": "1429 Haverford Ln, Lantana, TX 76226, United States", "time": "19:00", "note": "" },
-    { "date": "2025-05-05", "host": "Skip",           "location": "", "time": "19:00", "note": "Skipped" },
-    { "date": "2025-06-02", "host": "Tom Liggett",    "location": "1913 Walden Ct, Flower Mound, Texas 75022, United States", "time": "19:00", "note": "" },
-    { "date": "2025-07-07", "host": "Skip",           "location": "", "time": "19:00", "note": "Skipped" },
-    { "date": "2025-08-04", "host": "Mike Petersen",  "location": "2900 Hornby Ln, Flower Mound, TX 75022, United States", "time": "19:00", "note": "" },
-    { "date": "2025-09-01", "host": "Steve Farr",     "location": "3011 High Point Dr, Flower Mound, Texas 75022, United States", "time": "19:00", "note": "" },
-    { "date": "2025-10-06", "host": "Eli Cohen",      "location": "1808 Haversham Dr, Flower Mound, TX 75022, United States", "time": "19:00", "note": "" },
-    { "date": "2025-11-03", "host": "Randy Riley",    "location": "3201 Merrimack Ln, Flower Mound, Texas 75022, United States", "time": "19:00", "note": "" },
-    { "date": "2025-12-01", "host": "John Ramsey",    "location": "4204 Gallant Ct, Flower Mound, TX 75028, United States", "time": "19:00", "note": "" },
-    { "date": "2026-01-05", "host": "Skip",           "location": "", "time": "19:00", "note": "Skipped" },
-    { "date": "2026-02-02", "host": "Bill Farr",      "location": "5816 Lavon Dr, Flower Mound, TX 75028, United States", "time": "19:00", "note": "" },
-    { "date": "2026-03-02", "host": "Paul Lazzara",   "location": "5012 Seville Ln, Flower Mound, TX 75028, United States", "time": "19:00", "note": "" }
+    { "date": "2025-01-06", "host": "Skip",           "note": "Skipped" },
+    { "date": "2025-02-03", "host": "Tom Cooksey",    "note": "" },
+    { "date": "2025-03-03", "host": "Skip",           "note": "Skipped" },
+    { "date": "2025-04-07", "host": "Russell Stover", "note": "" },
+    { "date": "2025-05-05", "host": "Skip",           "note": "Skipped" },
+    { "date": "2025-06-02", "host": "Tom Liggett",    "note": "" },
+    { "date": "2025-07-07", "host": "Skip",           "note": "Skipped" },
+    { "date": "2025-08-04", "host": "Mike Petersen",  "note": "" },
+    { "date": "2025-09-01", "host": "Steve Farr",     "note": "" },
+    { "date": "2025-10-06", "host": "Eli Cohen",      "note": "" },
+    { "date": "2025-11-03", "host": "Randy Riley",    "note": "" },
+    { "date": "2025-12-01", "host": "John Ramsey",    "note": "" },
+    { "date": "2026-01-05", "host": "Skip",           "note": "Skipped" },
+    { "date": "2026-02-02", "host": "Bill Farr",      "note": "" },
+    { "date": "2026-03-02", "host": "Paul Lazzara",   "note": "" }
   ]
 }
