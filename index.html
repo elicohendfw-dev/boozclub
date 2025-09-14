@@ -135,7 +135,8 @@
         <div class="actions">
           <button class="btn" id="calendarBtn">Save to Calendar (.ics)</button>
         </div>
-        <p class="footnote" id="noteValue" style="display:none"></p></div>
+        <p class="footnote" id="noteValue" style="display:none"></p>
+      </div>
     </section>
 
     <!-- Schedule section (populated when events.json is present) -->
@@ -460,12 +461,12 @@
     }
 
     function buildICS(){
-      // All-day event with date only (no public time/location)
+      // Timed event: 7:00 PM – 9:00 PM America/Chicago
       const [y,m,d] = (state.date || '').split('-').map(Number);
       const pad = (n)=> String(n).padStart(2,'0');
       const ymd = `${String(y).padStart(4,'0')}${pad(m||1)}${pad(d||1)}`;
-      const endDate = new Date((y||1970), (m||1)-1, (d||1)+1);
-      const ymdEnd = `${endDate.getFullYear()}${pad(endDate.getMonth()+1)}${pad(endDate.getDate())}`;
+      const startLocal = `${ymd}T190000`;
+      const endLocal   = `${ymd}T210000`;
       const now = new Date();
       const fmtStamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
       return [
@@ -477,8 +478,8 @@
         'BEGIN:VEVENT',
         `UID:${Date.now()}@boozclub.local`,
         `DTSTAMP:${fmtStamp}`,
-        `DTSTART;VALUE=DATE:${ymd}`,
-        `DTEND;VALUE=DATE:${ymdEnd}`,
+        `DTSTART;TZID=America/Chicago:${startLocal}`,
+        `DTEND;TZID=America/Chicago:${endLocal}`,
         'SUMMARY:' + escapeICS('BoozClub Meeting at ' + (state.host || 'TBD')),
         `DESCRIPTION:${escapeICS(state.note || 'Monthly tasting')}`,
         'END:VEVENT',
@@ -513,7 +514,8 @@
       ok('escapeICS escapes , ; \\ and newline', escaped === 'a\\,b\\;c\\\\d\\nline');
       const ics1 = buildICS(); ok('ICS has sections', /BEGIN:VCALENDAR/.test(ics1) && /BEGIN:VEVENT/.test(ics1) && /END:VEVENT/.test(ics1) && /END:VCALENDAR/.test(ics1));
       ok('toJSON exposes required keys', ['clubName','clubTag','host','date','note','pin'].every(k => k in toJSON()));
-      const ics2 = buildICS(); ok('ICS is all-day', /DTSTART;VALUE=DATE:/i.test(ics2) && /DTEND;VALUE=DATE:/i.test(ics2));
+      const ics2 = buildICS();
+      ok('ICS time is 7–9pm CT', /DTSTART;TZID=America\/Chicago:\\d{8}T190000/.test(ics2) && /DTEND;TZID=America\/Chicago:\\d{8}T210000/.test(ics2));
       ok('ICS summary uses "Meeting at"', /SUMMARY:BoozClub Meeting at/i.test(ics2));
       ok('edit events URL correct', getGithubEditURL('events.json').endsWith('/events.json'));
       // Host visibility: Skip hides, Cancelled keeps host
