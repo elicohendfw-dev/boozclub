@@ -21,6 +21,9 @@
       --btnBg:#bbf7d0;        /* light green */
       --btnText:#064e3b;      /* deep green text */
       --btnBorder:rgba(6,78,59,.35);
+      --btnWarnBg:#fecaca;      /* light red */
+      --btnWarnText:#7f1d1d;    /* deep red text */
+      --btnWarnBorder:rgba(127,29,29,.35);
     }
     @media (prefers-color-scheme: dark){
       :root{
@@ -64,6 +67,7 @@
     .actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:18px}
     .btn{appearance:none; border:1px solid var(--btnBorder); background:var(--btnBg); color:var(--btnText); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600}
     .btn.primary{background:var(--btnBg); color:var(--btnText); border:1px solid var(--btnBorder)}
+    .btn.warn{background:var(--btnWarnBg); color:var(--btnWarnText); border:1px solid var(--btnWarnBorder)}
     .btn:focus{outline:3px solid var(--ring); outline-offset:2px}
 
     .footnote{margin-top:14px; color:var(--muted); font-size:.9rem}
@@ -101,17 +105,15 @@
         <div class="logo" aria-hidden="true">🍷</div>
         <div>
           <h1 id="clubName">BoozClub</h1>
-          <small id="clubTag">Monthly tasting & fellowship</small>
+          <small id="clubTag">Monthly Boozers Meet</small>
         </div>
       </div>
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
         <span class="status" id="syncStatus">Loading…</span>
         <button class="btn" id="refreshBtn" title="Reload JSON">Refresh</button>
-        <button class="btn" id="gitBtn" title="Edit events.json on GitHub">Edit on GitHub</button>
-        <button class="btn" id="downloadBtn" title="Download event.json">Download JSON</button>
-        <label class="btn" for="uploadInput" title="Upload event.json">Upload JSON</label>
-        <input type="file" id="uploadInput" accept="application/json,.json" hidden>
-        <button class="btn" id="shareBtn" title="Copy shareable summary">Share</button>
+        <button class="btn warn" id="editHostsBtn" title="Edit hosts.json on GitHub">Edit Hosts</button>
+        <button class="btn warn" id="editEventsBtn" title="Edit events.json on GitHub">Edit Events</button>
+                        <button class="btn" id="shareBtn" title="Copy shareable summary">Share</button>
       </div>
     </header>
 
@@ -172,7 +174,7 @@
         </div>
         <div class="field">
           <label for="clubTagInput">Tagline</label>
-          <input id="clubTagInput" placeholder="Monthly tasting & fellowship" />
+          <input id="clubTagInput" placeholder="Monthly Boozers Meet" />
         </div>
       </details>
 
@@ -221,7 +223,7 @@
     const EVENTS_RAW = `${RAW_BASE}/events.json`;
 
     // --- Defaults ---
-    const DEFAULTS = { clubName:'BoozClub', clubTag:'Monthly tasting & fellowship', host:'TBD', date:new Date().toISOString().slice(0,10), time:'19:00', location:'TBD', note:'', pin:'boozclub' };
+    const DEFAULTS = { clubName:'BoozClub', clubTag:'Monthly Boozers Meet', host:'TBD', date:new Date().toISOString().slice(0,10), time:'19:00', location:'TBD', note:'', pin:'boozclub' };
 
     // --- Elements ---
     const el = {
@@ -235,11 +237,10 @@
       mapBtn: document.getElementById('mapBtn'),
       calBtn: document.getElementById('calendarBtn'),
       copyBtn: document.getElementById('copyBtn'),
-      downloadBtn: document.getElementById('downloadBtn'),
-      uploadInput: document.getElementById('uploadInput'),
       shareBtn: document.getElementById('shareBtn'),
       refreshBtn: document.getElementById('refreshBtn'),
-      gitBtn: document.getElementById('gitBtn'),
+      editHostsBtn: document.getElementById('editHostsBtn'),
+      editEventsBtn: document.getElementById('editEventsBtn'),
       sync: document.getElementById('syncStatus'),
       adminBtn: document.getElementById('adminBtn'),
       adminModal: document.getElementById('adminModal'),
@@ -421,9 +422,10 @@
     el.calBtn.addEventListener('click', ()=>{ const ics = buildICS(); const blob = new Blob([ics], { type:'text/calendar;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `BoozClub-${state.date}.ics`; a.click(); URL.revokeObjectURL(url); });
     el.shareBtn.addEventListener('click', async ()=>{ const text = `BoozClub — Next Gathering\nHost: ${state.host}\nDate: ${formatDate(state.date)}\nTime: ${formatTime(state.time)}\nLocation: ${state.location}${state.note?`\nNote: ${state.note}`:''}`; if (navigator.share) { try { await navigator.share({ text }); } catch {} } else { try { await navigator.clipboard.writeText(text); alert('Summary copied'); } catch { alert('Copy failed'); } } });
     el.refreshBtn.addEventListener('click', ()=> syncFromRemote(true));
-    el.gitBtn.addEventListener('click', async ()=>{ try { await navigator.clipboard.writeText(JSON.stringify(toJSON(), null, 2)); } catch {} const url = getGithubEditURL(); if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo to enable one-click edit.'); } });
-    el.downloadBtn.addEventListener('click', ()=>{ const blob = new Blob([JSON.stringify(toJSON(), null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'event.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); });
-    el.uploadInput.addEventListener('change', async (e)=>{ const file = e.target.files && e.target.files[0]; if(!file) return; try{ const text = await file.text(); const data = JSON.parse(text); const cleaned = { ...DEFAULTS, ...data }; saveLocal(cleaned); alert('Loaded from JSON (preview only). Click "Edit on GitHub" to publish.'); }catch(err){ alert('Upload failed: ' + (err && err.message ? err.message : String(err))); }finally{ e.target.value = ''; } });
+    el.editHostsBtn.addEventListener('click', ()=>{ const url = getGithubEditURL('hosts.json'); if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo.'); } });
+    el.editEventsBtn.addEventListener('click', ()=>{ const url = getGithubEditURL('events.json'); if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo.'); } }); } catch {} const url = getGithubEditURL(); if(url){ window.open(url, '_blank'); } else { alert('Set your GitHub repo to enable one-click edit.'); } });
+     const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'event.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); });
+     const data = JSON.parse(text); const cleaned = { ...DEFAULTS, ...data }; saveLocal(cleaned); alert('Loaded from JSON (preview only). Click "Edit on GitHub" to publish.'); }catch(err){ alert('Upload failed: ' + (err && err.message ? err.message : String(err))); }finally{ e.target.value = ''; } });
 
     // --- Admin (local preview) ---
     el.adminBtn.addEventListener('click', async ()=>{ const ok = await verifyPIN(); if(ok){ el.adminModal.showModal(); } });
@@ -463,7 +465,7 @@
 
     // --- GitHub helpers ---
     function inferRepoFromLocation(){ try{ const host = location.hostname; const pathSegs = location.pathname.split('/').filter(Boolean); if(host.endsWith('github.io')){ GH.user = host.split('.')[0]; GH.repo = pathSegs.length ? pathSegs[0] : `${GH.user}.github.io`; } }catch{} }
-    function getGithubEditURL(){ if(!GH.user || !GH.repo) return ''; return `https://github.com/${GH.user}/${GH.repo}/edit/${GH.branch}/events.json`; }
+    function getGithubEditURL(file){ if(!GH.user || !GH.repo) return ''; const f = file || 'events.json'; return `https://github.com/${GH.user}/${GH.repo}/edit/${GH.branch}/${f}`; }/${GH.repo}/edit/${GH.branch}/events.json`; }
 
     // --- Minimal self-tests (console) ---
     (function runSelfTests(){
@@ -472,7 +474,7 @@
       ok('escapeICS escapes , ; \\ and newline', escaped === 'a\\,b\\;c\\\\d\\nline');
       const ics = buildICS(); ok('ICS has sections', /BEGIN:VCALENDAR/.test(ics) && /BEGIN:VEVENT/.test(ics) && /END:VEVENT/.test(ics) && /END:VCALENDAR/.test(ics));
       ok('toJSON exposes required keys', ['clubName','clubTag','host','date','time','location','note','pin'].every(k => k in toJSON()));
-      ok('GitHub edit URL ends with events.json', getGithubEditURL().endsWith('/events.json'));
+      ok('edit URLs correct', getGithubEditURL('events.json').endsWith('/events.json') && getGithubEditURL('hosts.json').endsWith('/hosts.json'));
       const failed = tests.filter(t=>!t.pass); if (failed.length){ console.warn('[BoozClub tests] FAILED', failed); } else { console.log('[BoozClub tests] All tests passed'); }
     })();
   </script>
