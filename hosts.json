@@ -1,0 +1,15 @@
+{
+  "hosts": [
+    { "name": "Bill Farr", "location": "5816 Lavon Dr, Flower Mound, Texas 75028, United States" },
+    { "name": "Eli", "location": "1808 Haversham Dr, Flower Mound, Texas 75022, United States" },
+    { "name": "John Ramsey", "location": "4204 Gallant Ct, Flower Mound, Texas 75028, United States" },
+    { "name": "Mike Petersen", "location": "2900 Hornby ln Flower Mound, TX 75022 United States" },
+    { "name": "Paul Lazzara", "location": "5012 Seville Ln, Flower Mound, Texas 75028, United States" },
+    { "name": "Russell Stover", "location": "1429 Haverford Ln, Lantana, Texas 76226, United States" },
+    { "name": "Tom Cooksey", "location": "5208 Coral Springs Dr, Flower Mound, Texas 75022, United States" },
+    { "name": "Andrew Chapman", "location": "" },
+    { "name": "Sam", "location": "" },
+    { "name": "Dave", "location": "" },
+    { "name": "Mark", "location": "" }
+  ]
+}
