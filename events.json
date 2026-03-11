@@ -72,7 +72,7 @@
     },
     {
       "date": "2026-03-02",
-      "host": "Paul Lazzara",
+      "host": "",
       "note": "Skipped"
     },
     {
@@ -83,6 +83,41 @@
     {
       "date": "2026-05-04",
       "host": "Mike Petersen",
+      "note": ""
+    },
+    {
+      "date": "2026-06-01",
+      "host": "Tom Cooksey",
+      "note": ""
+    },
+    {
+      "date": "2026-07-06",
+      "host": "",
+      "note": "Skipped"
+    },
+    {
+      "date": "2026-08-03",
+      "host": "Russell Stover",
+      "note": ""
+    },
+    {
+      "date": "2026-09-07",
+      "host": "Tom Liggett",
+      "note": ""
+    },
+    {
+      "date": "2026-10-05",
+      "host": "Steve Farr",
+      "note": ""
+    },
+    {
+      "date": "2026-11-02",
+      "host": "Eli Cohen",
+      "note": ""
+    },
+    {
+      "date": "2026-12-07",
+      "host": "Randy Riley",
       "note": ""
     }
   ]
