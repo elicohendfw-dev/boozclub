@@ -73,10 +73,15 @@
     {
       "date": "2026-03-02",
       "host": "Paul Lazzara",
-      "note": ""
+      "note": "Skipped"
     },
     {
       "date": "2026-04-06",
+      "host": "Paul Lazzara",
+      "note": ""
+    },
+    {
+      "date": "2026-05-04",
       "host": "Mike Petersen",
       "note": ""
     }
