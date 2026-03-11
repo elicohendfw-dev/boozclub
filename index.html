@@ -254,9 +254,13 @@
       return { isSkipped, isCancelled, rowClass: (isSkipped || isCancelled) ? 'row-skipped' : 'row-active' };
     }
 
-    function renderSchedule(list){
-      if(!Array.isArray(list) || !list.length){ el.scheduleSection.style.display = 'none'; return; }
-      const rows = list.map(e=>{
+  function renderSchedule(list){
+  if(!Array.isArray(list) || !list.length){ el.scheduleSection.style.display = 'none'; return; }
+
+  // NEW: render most recent first (does not change the original list used elsewhere)
+  const displayList = [...list].sort((a,b)=> b.date.localeCompare(a.date));
+
+  const rows = displayList.map(e=>{
         const { isSkipped, isCancelled, rowClass } = classifyEvent(e);
         const noteCell = isSkipped
           ? `<span class="badge skipped">Skipped</span>`
